@@ -4,6 +4,9 @@ class State:
         self.done = False
         self.next = None
 
+    def resize(self):
+        pass
+
     def update(self):
         pass
 

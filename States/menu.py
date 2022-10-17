@@ -1,6 +1,6 @@
 from .state import State
 from app import App
-from button import Button
+from util import Button
 
 
 class Menu(State):

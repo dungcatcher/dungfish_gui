@@ -45,3 +45,14 @@ class Button:
         text_surf, text_rect = self.font.render(self.text, text_colour)
         text_rect.center = self.rect.center
         App.window.blit(text_surf, text_rect)
+
+
+class Spritesheet:
+    def __init__(self, filename):
+        self.spritesheet_img = pygame.image.load(filename).convert_alpha()
+        self.piece_size = 60
+
+    def get_image_at(self, rect):
+        image = pygame.Surface(rect.size, pygame.SRCALPHA).convert_alpha()
+        image.blit(self.spritesheet_img, (0, 0), rect)
+        return image

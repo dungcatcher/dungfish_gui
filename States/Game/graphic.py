@@ -17,8 +17,8 @@ class GraphicalPieceGroup(pygame.sprite.Group):
         for spr in self.sprites():
             spr.image = pygame.transform.smoothscale(spr.orig_image, (board_rect.width / 8, board_rect.height / 8))
             spr.rect = spr.image.get_rect(
-                center=(spr.board_rect.left + spr.pos[0] * board_rect.width / 8 + board_rect.width / 16,
-                        spr.board_rect.top + spr.pos[1] * board_rect.height / 8 + board_rect.height / 16))
+                center=(board_rect.left + spr.pos[0] * board_rect.width / 8 + board_rect.width / 16,
+                        board_rect.top + spr.pos[1] * board_rect.height / 8 + board_rect.height / 16))
 
 
 class GraphicalPiece(pygame.sprite.Sprite):

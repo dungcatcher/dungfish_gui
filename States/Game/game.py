@@ -3,17 +3,8 @@ import pygame
 from States.state import State
 from app import App
 from .graphic import GraphicalPiece, GraphicalPieceGroup
-
-starting_position = [
-    ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
-    ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
-    [None, None, None, None, None, None, None, None],
-    [None, None, None, None, None, None, None, None],
-    [None, None, None, None, None, None, None, None],
-    [None, None, None, None, None, None, None, None],
-    ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
-    ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr']
-]
+from .board import Board
+from .movegen import gen_moves
 
 
 class Game(State):
@@ -28,13 +19,18 @@ class Game(State):
                 (self.orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width()
             )
         )
+        self.board = Board()
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
         self.pieces = GraphicalPieceGroup()
 
+        moves = gen_moves((0, 1), self.board, 'b')
+        for move in moves:
+            print(move.start, move.end)
+
         for y in range(8):
             for x in range(8):
-                if starting_position[y][x]:
-                    self.pieces.add(GraphicalPiece((x, y), self.board_rect, starting_position[y][x]))
+                if self.board.position[y][x]:
+                    self.pieces.add(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
 
     def resize(self):
         self.board_image = pygame.transform.smoothscale(

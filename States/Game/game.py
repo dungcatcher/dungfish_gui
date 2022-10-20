@@ -43,7 +43,7 @@ class Game(State):
 
     def update(self):
         for piece in self.pieces:
-            piece.update(self.board)
+            piece.update(self)
         self.draw()
 
     def draw(self):

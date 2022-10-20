@@ -27,13 +27,20 @@ class GraphicalPiece(pygame.sprite.Sprite):
         )
         self.orig_image = piece_spritesheet.get_image_at(spritesheet_rect)
         self.image = pygame.transform.smoothscale(self.orig_image, (board_rect.width / 8, board_rect.height / 8))
-        self.rect = self.image.get_rect(center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
-                                                board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
-        self.orig_move_circle = pygame.image.load('./Assets/move_circle.png').convert_alpha()
-        self.move_circle = pygame.transform.smoothscale(self.orig_move_circle, (board_rect.width / 8, board_rect.height / 8))
-        self.orig_capture_marker = pygame.image.load('./Assets/capture_marker.png').convert_alpha()
-        self.capture_marker = pygame.transform.smoothscale(self.orig_capture_marker, (board_rect.width / 8, board_rect.height / 8))
+        self.rect = self.image.get_rect(
+            center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
+                    board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
+        self.prev_rect = self.rect.copy()  # Rect before dragging
+        self.ghost_img = self.image.copy()
+        self.ghost_img.set_alpha(64)
 
+        self.orig_move_circle = pygame.image.load('./Assets/move_circle.png').convert_alpha()
+        self.move_circle = pygame.transform.smoothscale(self.orig_move_circle,
+                                                        (board_rect.width / 8, board_rect.height / 8))
+        self.orig_capture_marker = pygame.image.load('./Assets/capture_marker.png').convert_alpha()
+        self.capture_marker = pygame.transform.smoothscale(self.orig_capture_marker,
+                                                           (board_rect.width / 8, board_rect.height / 8))
+        self.dragging = False
         self.selected = False
 
         self.moves = []
@@ -43,6 +50,9 @@ class GraphicalPiece(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(
             center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
                     board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
+        self.prev_rect = self.rect.copy()
+        self.ghost_img = self.image.copy()
+        self.ghost_img.set_alpha(64)
         self.move_circle = pygame.transform.smoothscale(self.orig_move_circle,
                                                         (board_rect.width / 8, board_rect.height / 8))
         self.capture_marker = pygame.transform.smoothscale(self.orig_capture_marker,
@@ -51,25 +61,65 @@ class GraphicalPiece(pygame.sprite.Sprite):
     def gen_moves(self, board):
         self.moves = gen_moves(self.pos, board, self.piece_string[0])
 
-    def update(self, board):
+    def get_move(self, square):
+        for move in self.moves:
+            if square == move.end:
+                return move
+
+        return False
+
+    def make_move(self, move, game):
+        if move.flags == 'capture':
+            for piece in game.pieces:
+                if piece.pos == move.end:
+                    game.pieces.remove(piece)
+        self.pos = move.end
+        self.resize(game.board_rect)
+        self.selected = False
+
+        game.board.make_move(move)
+
+    def update(self, game):
+        square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
+                           int((pygame.mouse.get_pos()[1] - game.board_rect.top) // (game.board_rect.height / 8)))
+
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
-                self.gen_moves(board)
+                self.gen_moves(game.board)
                 self.selected = True
+                self.dragging = True
             else:
-                self.selected = False
+                if self.selected:
+                    move = self.get_move(square_hovering)
+                    if move:  # Is a move
+                        self.make_move(move, game)
+                    self.selected = False
+
+        if pygame.mouse.get_pressed()[0]:
+            if self.selected:
+                self.rect.center = pygame.mouse.get_pos()
+        else:
+            if self.dragging:
+                move = self.get_move(square_hovering)
+                if move:  # Is a move
+                    self.make_move(move, game)
+                else:
+                    self.rect = self.prev_rect.copy()
+
+                self.dragging = False
 
     def draw(self, board_rect):
-        App.window.blit(self.image, self.rect)
         if self.selected:
+            App.window.blit(self.ghost_img, self.prev_rect)
             for move in self.moves:
                 if move.flags != 'capture':
                     image = self.move_circle
                 else:
                     image = self.capture_marker
 
-                marker_rect = image.get_rect(center=(board_rect.left + move.end[0] * board_rect.width / 8 + board_rect.width / 16,
-                                                board_rect.top + move.end[1] * board_rect.height / 8 + board_rect.height / 16))
+                marker_rect = image.get_rect(
+                    center=(board_rect.left + move.end[0] * board_rect.width / 8 + board_rect.width / 16,
+                            board_rect.top + move.end[1] * board_rect.height / 8 + board_rect.height / 16))
                 App.window.blit(image, marker_rect)
 
-
+        App.window.blit(self.image, self.rect)

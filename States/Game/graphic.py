@@ -76,6 +76,7 @@ class GraphicalPiece(pygame.sprite.Sprite):
         self.pos = move.end
         self.resize(game.board_rect)
         self.selected = False
+        self.moves = []
 
         game.board.make_move(move)
 
@@ -85,9 +86,11 @@ class GraphicalPiece(pygame.sprite.Sprite):
 
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
-                self.gen_moves(game.board)
-                self.selected = True
-                self.dragging = True
+                if game.board.turn == self.piece_string[0]:
+                    if not self.moves:
+                        self.gen_moves(game.board)
+                    self.selected = True
+                    self.dragging = True
             else:
                 if self.selected:
                     move = self.get_move(square_hovering)

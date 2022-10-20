@@ -1,3 +1,5 @@
+from copy import copy
+
 from .constants import SQUARE_LETTER_TABLE
 
 
@@ -110,6 +112,12 @@ def gen_queen_moves(pos, board):
 def gen_king_moves(pos, board):
     vectors = [(-1, -1), (-1, 1), (1, -1), (1, 1), (0, 1), (0, -1), (1, 0), (-1, 0)]
     return gen_absolute(pos, board, vectors)
+
+
+def filter_illegal_moves(moves, board):
+    for move in moves:
+        new_board = copy(board)
+        new_board.make_move(move)
 
 
 def gen_moves(pos, board, turn):

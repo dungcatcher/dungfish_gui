@@ -1,8 +1,17 @@
+from .constants import SQUARE_LETTER_TABLE
+
+
 class Move:
     def __init__(self, start, end, flags=None):
         self.start = start
         self.end = end
         self.flags = flags
+
+
+def get_move_string(move):
+    start_string = SQUARE_LETTER_TABLE[move.start[1]][move.start[0]]
+    end_string = SQUARE_LETTER_TABLE[move.end[1]][move.end[0]]
+    return start_string + end_string
 
 
 def gen_pawn_moves(pos, board):
@@ -98,7 +107,9 @@ def gen_queen_moves(pos, board):
     return gen_rook_moves(pos, board) + gen_bishop_moves(pos, board)
 
 
-# def gen_king_moves(pos, board):
+def gen_king_moves(pos, board):
+    vectors = [(-1, -1), (-1, 1), (1, -1), (1, 1), (0, 1), (0, -1), (1, 0), (-1, 0)]
+    return gen_absolute(pos, board, vectors)
 
 
 def gen_moves(pos, board, turn):
@@ -107,5 +118,15 @@ def gen_moves(pos, board, turn):
         if target_colour == turn:
             if target_id == 'p':
                 return gen_pawn_moves(pos, board)
+            elif target_id == 'n':
+                return gen_knight_moves(pos, board)
+            elif target_id == 'b':
+                return gen_bishop_moves(pos, board)
+            elif target_id == 'r':
+                return gen_rook_moves(pos, board)
+            elif target_id == 'q':
+                return gen_queen_moves(pos, board)
+            elif target_id == 'k':
+                return gen_king_moves(pos, board)
 
     return []

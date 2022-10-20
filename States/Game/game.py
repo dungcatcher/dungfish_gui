@@ -2,9 +2,9 @@ import pygame
 
 from States.state import State
 from app import App
-from .graphic import GraphicalPiece, GraphicalPieceGroup
+from .graphic import GraphicalPiece
 from .board import Board
-from .movegen import gen_moves
+from .movegen import get_move_string
 
 
 class Game(State):
@@ -21,16 +21,12 @@ class Game(State):
         )
         self.board = Board()
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
-        self.pieces = GraphicalPieceGroup()
-
-        moves = gen_moves((0, 1), self.board, 'b')
-        for move in moves:
-            print(move.start, move.end)
+        self.pieces = []
 
         for y in range(8):
             for x in range(8):
                 if self.board.position[y][x]:
-                    self.pieces.add(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
+                    self.pieces.append(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
 
     def resize(self):
         self.board_image = pygame.transform.smoothscale(
@@ -42,9 +38,12 @@ class Game(State):
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
 
-        self.pieces.resize(self.board_rect)
+        for piece in self.pieces:
+            piece.resize(self.board_rect)
 
     def update(self):
+        for piece in self.pieces:
+            piece.update(self.board)
         self.draw()
 
     def draw(self):
@@ -52,4 +51,5 @@ class Game(State):
         pygame.draw.rect(App.window, (20, 20, 20), self.board_segment_rect)
 
         App.window.blit(self.board_image, self.board_rect)
-        self.pieces.draw(App.window)
+        for piece in self.pieces:
+            piece.draw(self.board_rect)

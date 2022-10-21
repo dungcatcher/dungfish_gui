@@ -78,7 +78,7 @@ class GraphicalPiece(pygame.sprite.Sprite):
         self.selected = False
         self.moves = []
 
-        game.board.make_move(move)
+        game.board.make_move(move, real=True)
 
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),

@@ -31,10 +31,14 @@ def gen_pawn_moves(pos, board, only_capture=False):
 
     if not only_capture:
         for vector in vectors:
+            double_push = abs(vector[1]) == 2  # true or false
             test_square = (pos[0] + vector[0], pos[1] + vector[1])
             if 0 <= test_square[0] <= 7 and 0 <= test_square[1] <= 7:
                 if not board.position[test_square[1]][test_square[0]]:
-                    moves.append(Move(pos, test_square))
+                    if not double_push:
+                        moves.append(Move(pos, test_square))
+                    else:
+                        moves.append(Move(pos, test_square, flags='double push'))
                 else:
                     break
 
@@ -44,6 +48,9 @@ def gen_pawn_moves(pos, board, only_capture=False):
             if board.position[test_square[1]][test_square[0]]:
                 if board.position[test_square[1]][test_square[0]][0] != piece_colour:
                     moves.append(Move(pos, test_square, flags='capture'))
+            else:
+                if board.position[test_square[1]][test_square[0]] == board.ep_square:
+                    moves.append(Move(pos, test_square, flags='enpassant'))
 
     return moves
 
@@ -133,17 +140,22 @@ def filter_illegal_moves(moves, board):
         new_board.make_move(move)
 
         king_pos = new_board.wk_pos if board.turn == 'w' else new_board.bk_pos
-        print(king_pos)
 
-        queen_moves = gen_queen_moves(king_pos, new_board)
+        rook_moves = gen_rook_moves(king_pos, new_board)
+        bishop_moves = gen_bishop_moves(king_pos, new_board)
         knight_moves = gen_knight_moves(king_pos, new_board)
         pawn_captures = gen_pawn_moves(king_pos, new_board, only_capture=True)
+        king_moves = gen_king_moves(king_pos, new_board)
 
-        if check_attacking_pieces(queen_moves, new_board, ['b', 'r', 'q']):
+        if check_attacking_pieces(rook_moves, new_board, ['r', 'q']):
+            continue
+        if check_attacking_pieces(bishop_moves, new_board, ['b', 'q']):
             continue
         if check_attacking_pieces(knight_moves, new_board, ['n']):
             continue
         if check_attacking_pieces(pawn_captures, new_board, ['p']):
+            continue
+        if check_attacking_pieces(king_moves, new_board, ['k']):
             continue
 
         legal_moves.append(move)

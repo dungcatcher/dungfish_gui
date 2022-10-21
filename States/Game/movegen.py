@@ -126,6 +126,8 @@ def gen_king_moves(pos, board):
     # Castling
     if board.castling[board.turn]['queenside']:
         vectors = [(-1, 0), (-2, 0)]
+        queenside_possible = True
+
         for vector in vectors:
             test_square = (pos[0] + vector[0], pos[1] + vector[1])
             if not board.position[test_square[1]][test_square[0]]:  # Not occupied
@@ -133,7 +135,14 @@ def gen_king_moves(pos, board):
                 fake_move = Move(pos, test_square)
                 new_board.make_move(fake_move)
 
-                if not in_check(new_board):
+                if in_check(new_board):
+                    queenside_possible = False
+                    break
+            else:
+                queenside_possible = False
+                break
+        if queenside_possible:
+            moves.append(Move(pos, (pos[0] - 2, pos[1]), flags='queenside castle'))
 
     return moves
 
@@ -178,9 +187,8 @@ def filter_illegal_moves(moves, board):
         new_board = copy.deepcopy(board)
         new_board.make_move(move)
 
-
-
-        legal_moves.append(move)
+        if not in_check(new_board):
+            legal_moves.append(move)
 
     return legal_moves
 

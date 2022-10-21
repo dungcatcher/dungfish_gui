@@ -22,9 +22,6 @@ class Board:
     def make_move(self, move, real=False):  # real means it is played on the real board
         piece = self.position[move.start[1]][move.start[0]]
 
-        self.position[move.end[1]][move.end[0]] = piece
-        self.position[move.start[1]][move.start[0]] = None
-
         if real:
             if move.flags == 'double push':
                 if self.turn == 'w':
@@ -35,7 +32,7 @@ class Board:
                 self.ep_square = None
 
             # Update castling availability
-            move_piece = self.position[move.start[1]][move.start[0]][1]
+            move_piece = self.position[move.start[1]][move.start[0]]
             if move_piece[1] == 'k':
                 self.castling[move_piece[0]]['queenside'] = False
                 self.castling[move_piece[0]]['kingside'] = False
@@ -50,6 +47,9 @@ class Board:
                         self.castling['b']['queenside'] = False
                     elif move.start == (7, 0):
                         self.castling['b']['kingside'] = False
+
+        self.position[move.end[1]][move.end[0]] = piece
+        self.position[move.start[1]][move.start[0]] = None
 
         if move.flags == 'enpassant':
             if self.turn == 'w':

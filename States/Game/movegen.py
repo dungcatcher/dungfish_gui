@@ -49,7 +49,7 @@ def gen_pawn_moves(pos, board, only_capture=False):
                 if board.position[test_square[1]][test_square[0]][0] != piece_colour:
                     moves.append(Move(pos, test_square, flags='capture'))
             else:
-                if board.position[test_square[1]][test_square[0]] == board.ep_square:
+                if test_square == board.ep_square:
                     moves.append(Move(pos, test_square, flags='enpassant'))
 
     return moves
@@ -118,8 +118,24 @@ def gen_queen_moves(pos, board):
 
 
 def gen_king_moves(pos, board):
+    moves = []
+
     vectors = [(-1, -1), (-1, 1), (1, -1), (1, 1), (0, 1), (0, -1), (1, 0), (-1, 0)]
-    return gen_absolute(pos, board, vectors)
+    moves += gen_absolute(pos, board, vectors)
+
+    # Castling
+    if board.castling[board.turn]['queenside']:
+        vectors = [(-1, 0), (-2, 0)]
+        for vector in vectors:
+            test_square = (pos[0] + vector[0], pos[1] + vector[1])
+            if not board.position[test_square[1]][test_square[0]]:  # Not occupied
+                new_board = copy.deepcopy(board)
+                fake_move = Move(pos, test_square)
+                new_board.make_move(fake_move)
+
+                if not in_check(new_board):
+
+    return moves
 
 
 def check_attacking_pieces(moves, board, target_pieces):
@@ -132,6 +148,29 @@ def check_attacking_pieces(moves, board, target_pieces):
     return False
 
 
+def in_check(board):
+    king_pos = board.wk_pos if board.turn == 'w' else board.bk_pos
+
+    rook_moves = gen_rook_moves(king_pos, board)
+    bishop_moves = gen_bishop_moves(king_pos, board)
+    knight_moves = gen_knight_moves(king_pos, board)
+    pawn_captures = gen_pawn_moves(king_pos, board, only_capture=True)
+    king_moves = gen_king_moves(king_pos, board)
+
+    if check_attacking_pieces(rook_moves, board, ['r', 'q']):
+        return True
+    if check_attacking_pieces(bishop_moves, board, ['b', 'q']):
+        return True
+    if check_attacking_pieces(knight_moves, board, ['n']):
+        return True
+    if check_attacking_pieces(pawn_captures, board, ['p']):
+        return True
+    if check_attacking_pieces(king_moves, board, ['k']):
+        return True
+
+    return False
+
+
 def filter_illegal_moves(moves, board):
     legal_moves = []
     #  Generates queen, knight and pawn moves from king position
@@ -139,24 +178,7 @@ def filter_illegal_moves(moves, board):
         new_board = copy.deepcopy(board)
         new_board.make_move(move)
 
-        king_pos = new_board.wk_pos if board.turn == 'w' else new_board.bk_pos
 
-        rook_moves = gen_rook_moves(king_pos, new_board)
-        bishop_moves = gen_bishop_moves(king_pos, new_board)
-        knight_moves = gen_knight_moves(king_pos, new_board)
-        pawn_captures = gen_pawn_moves(king_pos, new_board, only_capture=True)
-        king_moves = gen_king_moves(king_pos, new_board)
-
-        if check_attacking_pieces(rook_moves, new_board, ['r', 'q']):
-            continue
-        if check_attacking_pieces(bishop_moves, new_board, ['b', 'q']):
-            continue
-        if check_attacking_pieces(knight_moves, new_board, ['n']):
-            continue
-        if check_attacking_pieces(pawn_captures, new_board, ['p']):
-            continue
-        if check_attacking_pieces(king_moves, new_board, ['k']):
-            continue
 
         legal_moves.append(move)
 

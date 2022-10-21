@@ -73,6 +73,15 @@ class GraphicalPiece(pygame.sprite.Sprite):
             for piece in game.pieces:
                 if piece.pos == move.end:
                     game.pieces.remove(piece)
+        if move.flags == 'enpassant':
+            for piece in game.pieces:
+                if game.board.turn == 'w':
+                    if piece.pos == (move.end[0], move.end[1] + 1):
+                        game.pieces.remove(piece)
+                else:
+                    if piece.pos == (move.end[0], move.end[1] - 1):
+                        game.pieces.remove(piece)
+
         self.pos = move.end
         self.resize(game.board_rect)
         self.selected = False
@@ -115,10 +124,10 @@ class GraphicalPiece(pygame.sprite.Sprite):
         if self.selected:
             App.window.blit(self.ghost_img, self.prev_rect)
             for move in self.moves:
-                if move.flags != 'capture':
-                    image = self.move_circle
-                else:
+                if move.flags == 'capture' or move.flags == 'enpassant':
                     image = self.capture_marker
+                else:
+                    image = self.move_circle
 
                 marker_rect = image.get_rect(
                     center=(board_rect.left + move.end[0] * board_rect.width / 8 + board_rect.width / 16,

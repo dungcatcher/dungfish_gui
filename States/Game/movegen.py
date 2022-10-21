@@ -117,32 +117,47 @@ def gen_queen_moves(pos, board):
     return gen_rook_moves(pos, board) + gen_bishop_moves(pos, board)
 
 
-def gen_king_moves(pos, board):
+def check_castling_possibility(board, king_pos, side):
+    if board.castling[board.turn][side]:
+        if not in_check(board):  # King is in check
+            vectors = [(-1, 0), (-2, 0)] if side == 'queenside' else [(1, 0), (2, 0)]
+
+            for vector in vectors:
+                test_square = (king_pos[0] + vector[0], king_pos[1] + vector[1])
+                if not board.position[test_square[1]][test_square[0]]:  # Not occupied
+                    new_board = copy.deepcopy(board)
+                    fake_move = Move(king_pos, test_square)
+                    new_board.make_move(fake_move)
+
+                    if in_check(new_board):
+                        return False
+                    if board.position[0 if board.turn == 'b' else 7][0 if side == 'queenside' else 7][1] != 'r':  # No rook
+                        return False
+                else:
+                    return False
+        else:
+            return False
+    else:
+        return False
+
+    return True
+
+
+def gen_king_moves(pos, board, castling=True):
     moves = []
 
     vectors = [(-1, -1), (-1, 1), (1, -1), (1, 1), (0, 1), (0, -1), (1, 0), (-1, 0)]
     moves += gen_absolute(pos, board, vectors)
 
     # Castling
-    if board.castling[board.turn]['queenside']:
-        vectors = [(-1, 0), (-2, 0)]
-        queenside_possible = True
-
-        for vector in vectors:
-            test_square = (pos[0] + vector[0], pos[1] + vector[1])
-            if not board.position[test_square[1]][test_square[0]]:  # Not occupied
-                new_board = copy.deepcopy(board)
-                fake_move = Move(pos, test_square)
-                new_board.make_move(fake_move)
-
-                if in_check(new_board):
-                    queenside_possible = False
-                    break
-            else:
-                queenside_possible = False
-                break
+    if castling:
+        queenside_possible = check_castling_possibility(board, pos, 'queenside')
         if queenside_possible:
             moves.append(Move(pos, (pos[0] - 2, pos[1]), flags='queenside castle'))
+
+        kingside_possible = check_castling_possibility(board, pos, 'kingside')
+        if kingside_possible:
+            moves.append(Move(pos, (pos[0] + 2, pos[1]), flags='kingside castle'))
 
     return moves
 
@@ -164,7 +179,7 @@ def in_check(board):
     bishop_moves = gen_bishop_moves(king_pos, board)
     knight_moves = gen_knight_moves(king_pos, board)
     pawn_captures = gen_pawn_moves(king_pos, board, only_capture=True)
-    king_moves = gen_king_moves(king_pos, board)
+    king_moves = gen_king_moves(king_pos, board, castling=False)
 
     if check_attacking_pieces(rook_moves, board, ['r', 'q']):
         return True

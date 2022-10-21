@@ -81,6 +81,16 @@ class GraphicalPiece(pygame.sprite.Sprite):
                 else:
                     if piece.pos == (move.end[0], move.end[1] - 1):
                         game.pieces.remove(piece)
+        if move.flags == 'queenside castle':
+            for piece in game.pieces:
+                if piece.pos == (move.end[0] - 2, move.end[1]):
+                    piece.pos = (move.end[0] + 1, move.end[1])
+                    piece.resize(game.board_rect)
+        if move.flags == 'kingside castle':
+            for piece in game.pieces:
+                if piece.pos == (move.end[0] + 1, move.end[1]):
+                    piece.pos = (move.end[0] - 1, move.end[1])
+                    piece.resize(game.board_rect)
 
         self.pos = move.end
         self.resize(game.board_rect)

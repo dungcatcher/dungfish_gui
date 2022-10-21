@@ -19,6 +19,22 @@ class Board:
             'b': {'queenside': True, 'kingside': True}
         }
 
+    def print(self):
+        string = ""
+        for y in range(8):
+            for x in range(8):
+                piece = self.position[y][x]
+                if piece:
+                    if piece[0] == 'b':
+                        string += piece[1]
+                    else:
+                        string += piece[1].upper()
+                else:
+                    string += '.'
+            string += '\n'
+
+        return string
+
     def make_move(self, move, real=False):  # real means it is played on the real board
         piece = self.position[move.start[1]][move.start[0]]
 
@@ -30,6 +46,7 @@ class Board:
                     self.ep_square = (move.start[0], move.end[1] - 1)
             else:
                 self.ep_square = None
+            print(move.flags)
 
             # Update castling availability
             move_piece = self.position[move.start[1]][move.start[0]]
@@ -56,8 +73,12 @@ class Board:
                 self.position[move.end[1] + 1][move.end[0]] = None
             else:
                 self.position[move.end[1] - 1][move.end[0]] = None
-
-        self.turn = 'b' if self.turn == 'w' else 'w'
+        if move.flags == 'queenside castle':
+            self.position[move.end[1]][move.end[0] + 1] = self.position[move.end[1]][move.end[0] - 2]
+            self.position[move.end[1]][move.end[0] - 2] = None
+        if move.flags == 'kingside castle':
+            self.position[move.end[1]][move.end[0] - 1] = self.position[move.end[1]][move.end[0] + 1]
+            self.position[move.end[1]][move.end[0] + 1] = None
 
         for y in range(8):
             for x in range(8):
@@ -65,3 +86,7 @@ class Board:
                     self.wk_pos = (x, y)
                 if self.position[y][x] == 'bk':
                     self.bk_pos = (x, y)
+
+        if real:
+            self.turn = 'b' if self.turn == 'w' else 'w'
+            print(self.print())

@@ -1,4 +1,4 @@
-from copy import copy
+from copy import deepcopy
 
 from .constants import SQUARE_LETTER_TABLE
 
@@ -114,27 +114,57 @@ def gen_king_moves(pos, board):
     return gen_absolute(pos, board, vectors)
 
 
-def filter_illegal_moves(moves, board):
+def check_attacking_pieces(moves, board, target_pieces):
     for move in moves:
-        new_board = copy(board)
+        target_piece = board.position[move.end[1]][move.end[0]]
+        if target_piece:
+            if target_piece[1] in target_pieces:
+                return True
+
+    return False
+
+
+def filter_illegal_moves(moves, board):
+    legal_moves = []
+    #  Generates queen, knight and pawn moves from king position
+    for move in moves:
+        new_board = deepcopy(board)
         new_board.make_move(move)
+
+        king_pos = board.wk_pos if board.turn == 'w' else board.bk_pos
+
+        queen_moves = gen_queen_moves(king_pos, new_board)
+        knight_moves = gen_knight_moves(king_pos, new_board)
+
+        if check_attacking_pieces(queen_moves, new_board, ['b', 'r', 'q']):
+            continue
+        if check_attacking_pieces(knight_moves, new_board, ['n']):
+            continue
+
+        legal_moves.append(move)
+
+    return legal_moves
 
 
 def gen_moves(pos, board, turn):
+    moves = []
+
     if board.position[pos[1]][pos[0]]:
         target_colour, target_id = board.position[pos[1]][pos[0]]
         if target_colour == turn:
             if target_id == 'p':
-                return gen_pawn_moves(pos, board)
+                moves = gen_pawn_moves(pos, board)
             elif target_id == 'n':
-                return gen_knight_moves(pos, board)
+                moves = gen_knight_moves(pos, board)
             elif target_id == 'b':
-                return gen_bishop_moves(pos, board)
+                moves = gen_bishop_moves(pos, board)
             elif target_id == 'r':
-                return gen_rook_moves(pos, board)
+                moves = gen_rook_moves(pos, board)
             elif target_id == 'q':
-                return gen_queen_moves(pos, board)
+                moves = gen_queen_moves(pos, board)
             elif target_id == 'k':
-                return gen_king_moves(pos, board)
+                moves = gen_king_moves(pos, board)
 
-    return []
+    moves = filter_illegal_moves(moves, board)
+
+    return moves

@@ -24,14 +24,12 @@ class GraphicalPiece:
             piece_colour_to_y_value[piece_string[0]] * piece_spritesheet.piece_size,
             piece_spritesheet.piece_size, piece_spritesheet.piece_size
         )
-        self.orig_image = piece_spritesheet.get_image_at(spritesheet_rect)
-        self.image = pygame.transform.smoothscale(self.orig_image, (board_rect.width / 8, board_rect.height / 8))
-        self.rect = self.image.get_rect(
-            center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
-                    board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
-        self.prev_rect = self.rect.copy()  # Rect before dragging
-        self.ghost_img = self.image.copy()
-        self.ghost_img.set_alpha(64)
+        self.orig_image = None
+        self.image = None
+        self.rect = None
+        self.prev_rect = None
+        self.ghost_img = None
+        self.load_image_from_piece_string(board_rect, piece_string)
 
         self.orig_move_circle = pygame.image.load('./Assets/move_circle.png').convert_alpha()
         self.move_circle = pygame.transform.smoothscale(self.orig_move_circle,
@@ -44,6 +42,21 @@ class GraphicalPiece:
         self.hidden = False
 
         self.moves = []
+
+    def load_image_from_piece_string(self, board_rect, piece_string):
+        spritesheet_rect = pygame.Rect(
+            piece_letter_to_x_value[piece_string[1]] * piece_spritesheet.piece_size,
+            piece_colour_to_y_value[piece_string[0]] * piece_spritesheet.piece_size,
+            piece_spritesheet.piece_size, piece_spritesheet.piece_size
+        )
+        self.orig_image = piece_spritesheet.get_image_at(spritesheet_rect)
+        self.image = pygame.transform.smoothscale(self.orig_image, (board_rect.width / 8, board_rect.height / 8))
+        self.rect = self.image.get_rect(
+            center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
+                    board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
+        self.prev_rect = self.rect.copy()  # Rect before dragging
+        self.ghost_img = self.image.copy()
+        self.ghost_img.set_alpha(64)
 
     def resize(self, board_rect):
         self.image = pygame.transform.smoothscale(self.orig_image, (board_rect.width / 8, board_rect.height / 8))
@@ -69,7 +82,6 @@ class GraphicalPiece:
         return False
 
     def make_move(self, move, game):
-        print(move.flags)
         if 'capture' in move.flags:
             for piece in game.pieces:
                 if piece.pos == move.end:
@@ -102,7 +114,7 @@ class GraphicalPiece:
         else:
             if move.promotion_type:
                 self.pos = move.end
-                self.resize(game.board_rect)
+                self.load_image_from_piece_string(game.board_rect, self.piece_string[0] + move.promotion_type)
                 self.selected = False
                 self.moves = []
                 game.board.make_move(move, real=True)

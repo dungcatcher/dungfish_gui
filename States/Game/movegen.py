@@ -129,7 +129,6 @@ def gen_queen_moves(pos, board):
 def check_castling_possibility(board, king_pos, side):
     if board.castling[board.turn][side]:
         if not in_check(board):  # King is in check
-            print(board.position[0 if board.turn == 'b' else 7][0 if side == 'queenside' else 7][1])
             vectors = [(-1, 0), (-2, 0)] if side == 'queenside' else [(1, 0), (2, 0)]
 
             for vector in vectors:
@@ -138,7 +137,6 @@ def check_castling_possibility(board, king_pos, side):
                     new_board = copy.deepcopy(board)
                     fake_move = Move(king_pos, test_square)
                     new_board.make_move(fake_move)
-                    print(new_board.print())
 
                     if in_check(new_board):
                         return False

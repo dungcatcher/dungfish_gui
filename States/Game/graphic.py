@@ -129,8 +129,7 @@ class GraphicalPiece:
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
                 if game.board.turn == self.piece_string[0]:
-                    if not self.moves:
-                        self.gen_moves(game.board)
+                    self.gen_moves(game.board)
                     self.selected = True
                     self.dragging = True
             else:

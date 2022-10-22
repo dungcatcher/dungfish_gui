@@ -1,10 +1,22 @@
 import pygame
+from subprocess import Popen, PIPE
+import threading
 
 from States.state import State
 from app import App
 from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .movegen import get_move_string
+
+
+def read_engine_output():
+    cmd = r'C:\Users\User\PycharmProjects\dungfish_gui\Assets\stockfish_15_x64_popcnt.exe'
+    p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding='UTF8')
+    p.stdin.write('go perft 1\n')
+    p.stdin.flush()
+    while True:
+        response = p.stdout.readline()
+        print(response)
 
 
 class Game(State):
@@ -23,6 +35,7 @@ class Game(State):
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
         self.pieces = []
 
+        # Load all graphical pieces
         for y in range(8):
             for x in range(8):
                 if self.board.position[y][x]:
@@ -33,15 +46,17 @@ class Game(State):
         self.promotion_list = ['q', 'n', 'r', 'b']
         self.selected_promotion = None
         # Promotion images
-        self.w_promotion_pieces = []
-        self.b_promotion_pieces = []
+        self.promotion_pieces = []
         for i, piece_letter in enumerate(self.promotion_list):
             for colour in ['w', 'b']:
                 promotion_piece = PromotionPiece(colour + piece_letter, self, i)
-                if colour == 'w':
-                    self.w_promotion_pieces.append(promotion_piece)
-                else:
-                    self.b_promotion_pieces.append(promotion_piece)
+                self.promotion_pieces.append(promotion_piece)
+
+        self.player_colour = 'w'
+
+        engine_thread = threading.Thread(name='read_engine_output', target=read_engine_output, daemon=True)
+        engine_thread.start()
+        # read_engine_output()
 
     def resize(self):
         self.board_image = pygame.transform.smoothscale(
@@ -55,17 +70,16 @@ class Game(State):
 
         for piece in self.pieces:
             piece.resize(self.board_rect)
+        for promotion_piece in self.promotion_pieces:
+            promotion_piece.resize(self)
 
     def update(self):
         if not self.in_promotion:
             for piece in self.pieces:
                 piece.update(self)
         else:
-            if self.board.turn == 'w':
-                for promotion_piece in self.w_promotion_pieces:
-                    promotion_piece.update(self)
-            else:
-                for promotion_piece in self.b_promotion_pieces:
+            for promotion_piece in self.promotion_pieces:
+                if promotion_piece.piece_string[0] == self.board.turn:
                     promotion_piece.update(self)
 
             if self.selected_promotion:
@@ -92,11 +106,8 @@ class Game(State):
             transparent_surf.fill((0, 0, 0, 64))
             App.window.blit(transparent_surf, self.board_rect)
 
-            if self.board.turn == 'w':
-                for promotion_piece in self.w_promotion_pieces:
-                    promotion_piece.draw()
-            else:
-                for promotion_piece in self.b_promotion_pieces:
+            for promotion_piece in self.promotion_pieces:
+                if promotion_piece.piece_string[0] == self.board.turn:
                     promotion_piece.draw()
 
 

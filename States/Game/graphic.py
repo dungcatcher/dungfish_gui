@@ -1,6 +1,7 @@
 import pygame
-from util import Spritesheet
+import threading
 
+from util import Spritesheet
 from .movegen import gen_moves
 from app import App
 
@@ -13,17 +14,15 @@ piece_colour_to_y_value = {
     'b': 0, 'w': 1
 }
 
+move_sound = pygame.mixer.Sound('./Assets/move.ogg')
+capture_sound = pygame.mixer.Sound('./Assets/capture.ogg')
+
 
 class GraphicalPiece:
     def __init__(self, pos, board_rect, piece_string):
         self.pos = pos
         self.piece_string = piece_string
 
-        spritesheet_rect = pygame.Rect(
-            piece_letter_to_x_value[piece_string[1]] * piece_spritesheet.piece_size,
-            piece_colour_to_y_value[piece_string[0]] * piece_spritesheet.piece_size,
-            piece_spritesheet.piece_size, piece_spritesheet.piece_size
-        )
         self.orig_image = None
         self.image = None
         self.rect = None
@@ -122,6 +121,12 @@ class GraphicalPiece:
                 game.in_promotion = True
                 game.promotion_move = move
 
+        if 'capture' not in move.flags:
+            move_sound.play()
+        else:
+            if not ('promotion' in move.flags and move.promotion_type):
+                capture_sound.play()
+
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
                            int((pygame.mouse.get_pos()[1] - game.board_rect.top) // (game.board_rect.height / 8)))
@@ -182,6 +187,10 @@ class PromotionPiece:
         self.image = pygame.transform.smoothscale(self.orig_image, (game.board_rect.width / 8, game.board_rect.height / 8))
         self.rect = self.image.get_rect()
         self.hovered = False
+
+    def resize(self, game):
+        self.image = pygame.transform.smoothscale(self.orig_image, (game.board_rect.width / 8, game.board_rect.height / 8))
+        self.rect = self.image.get_rect()
 
     def update(self, game):
         offset = -self.index if self.piece_string[0] == 'b' else self.index

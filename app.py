@@ -3,6 +3,8 @@ import pygame
 
 class App:
     pygame.init()
+    pygame.mixer.init()
+
     pygame.display.set_caption('Dungfish ILP project')
 
     window = pygame.display.set_mode((960, 590), pygame.RESIZABLE)

@@ -2,7 +2,7 @@ import pygame
 
 from States.state import State
 from app import App
-from .graphic import GraphicalPiece
+from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .movegen import get_move_string
 
@@ -28,6 +28,21 @@ class Game(State):
                 if self.board.position[y][x]:
                     self.pieces.append(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
 
+        self.in_promotion = False
+        self.promotion_move = None
+        self.promotion_list = ['q', 'n', 'r', 'b']
+        self.selected_promotion = None
+        # Promotion images
+        self.w_promotion_pieces = []
+        self.b_promotion_pieces = []
+        for i, piece_letter in enumerate(self.promotion_list):
+            for colour in ['w', 'b']:
+                promotion_piece = PromotionPiece(colour + piece_letter, self, i)
+                if colour == 'w':
+                    self.w_promotion_pieces.append(promotion_piece)
+                else:
+                    self.b_promotion_pieces.append(promotion_piece)
+
     def resize(self):
         self.board_image = pygame.transform.smoothscale(
             self.orig_image, (
@@ -42,8 +57,26 @@ class Game(State):
             piece.resize(self.board_rect)
 
     def update(self):
-        for piece in self.pieces:
-            piece.update(self)
+        if not self.in_promotion:
+            for piece in self.pieces:
+                piece.update(self)
+        else:
+            if self.board.turn == 'w':
+                for promotion_piece in self.w_promotion_pieces:
+                    promotion_piece.update(self)
+            else:
+                for promotion_piece in self.b_promotion_pieces:
+                    promotion_piece.update(self)
+
+            if self.selected_promotion:
+                for piece in self.pieces:
+                    if piece.pos == self.promotion_move.start:
+                        self.promotion_move.promotion_type = self.selected_promotion
+                        piece.make_move(self.promotion_move, self)
+                        self.in_promotion = False
+                        self.selected_promotion = None
+                        self.promotion_move = None
+                        break
         self.draw()
 
     def draw(self):
@@ -53,3 +86,18 @@ class Game(State):
         App.window.blit(self.board_image, self.board_rect)
         for piece in self.pieces:
             piece.draw(self.board_rect)
+
+        if self.in_promotion:
+            transparent_surf = pygame.Surface(self.board_rect.size, pygame.SRCALPHA, 32)
+            transparent_surf.fill((0, 0, 0, 64))
+            App.window.blit(transparent_surf, self.board_rect)
+
+            if self.board.turn == 'w':
+                for promotion_piece in self.w_promotion_pieces:
+                    promotion_piece.draw()
+            else:
+                for promotion_piece in self.b_promotion_pieces:
+                    promotion_piece.draw()
+
+
+

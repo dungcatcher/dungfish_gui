@@ -4,10 +4,13 @@ from .constants import SQUARE_LETTER_TABLE
 
 
 class Move:
-    def __init__(self, start, end, flags=None):
+    def __init__(self, start, end, flags=None, promotion_type=None):
+        if flags is None:
+            flags = []
         self.start = start
         self.end = end
         self.flags = flags
+        self.promotion_type = promotion_type
 
 
 def get_move_string(move):
@@ -36,9 +39,12 @@ def gen_pawn_moves(pos, board, only_capture=False):
             if 0 <= test_square[0] <= 7 and 0 <= test_square[1] <= 7:
                 if not board.position[test_square[1]][test_square[0]]:
                     if not double_push:
-                        moves.append(Move(pos, test_square))
+                        if test_square[1] == 0 and board.turn == 'w' or test_square[1] == 7 and board.turn == 'b':
+                            moves.append(Move(pos, test_square, flags=['promotion']))
+                        else:
+                            moves.append(Move(pos, test_square))
                     else:
-                        moves.append(Move(pos, test_square, flags='double push'))
+                        moves.append(Move(pos, test_square, flags=['double push']))
                 else:
                     break
 
@@ -47,10 +53,13 @@ def gen_pawn_moves(pos, board, only_capture=False):
         if 0 <= test_square[0] <= 7 and 0 <= test_square[1] <= 7:
             if board.position[test_square[1]][test_square[0]]:
                 if board.position[test_square[1]][test_square[0]][0] != piece_colour:
-                    moves.append(Move(pos, test_square, flags='capture'))
+                    if test_square[1] == 0 and board.turn == 'w' or test_square[1] == 7 and board.turn == 'b':
+                        moves.append(Move(pos, test_square, flags=['capture', 'promotion']))
+                    else:
+                        moves.append(Move(pos, test_square, flags=['capture']))
             else:
                 if test_square == board.ep_square:
-                    moves.append(Move(pos, test_square, flags='enpassant'))
+                    moves.append(Move(pos, test_square, flags=['enpassant']))
 
     return moves
 
@@ -65,7 +74,7 @@ def gen_absolute(pos, board, vectors):
         if 0 <= test_square[0] <= 7 and 0 <= test_square[1] <= 7:
             if board.position[test_square[1]][test_square[0]]:
                 if board.position[test_square[1]][test_square[0]][0] != piece_colour:
-                    moves.append(Move(pos, test_square, flags='capture'))
+                    moves.append(Move(pos, test_square, flags=['capture']))
             else:
                 moves.append(Move(pos, test_square))
 
@@ -86,7 +95,7 @@ def gen_sliding(pos, board, vectors):
             if 0 <= test_square[0] <= 7 and 0 <= test_square[1] <= 7:
                 if board.position[test_square[1]][test_square[0]]:
                     if board.position[test_square[1]][test_square[0]][0] != piece_colour:
-                        moves.append(Move(pos, test_square, flags='capture'))
+                        moves.append(Move(pos, test_square, flags=['capture']))
                     blockage_found = True
                 else:
                     moves.append(Move(pos, test_square))
@@ -120,6 +129,7 @@ def gen_queen_moves(pos, board):
 def check_castling_possibility(board, king_pos, side):
     if board.castling[board.turn][side]:
         if not in_check(board):  # King is in check
+            print(board.position[0 if board.turn == 'b' else 7][0 if side == 'queenside' else 7][1])
             vectors = [(-1, 0), (-2, 0)] if side == 'queenside' else [(1, 0), (2, 0)]
 
             for vector in vectors:
@@ -128,6 +138,7 @@ def check_castling_possibility(board, king_pos, side):
                     new_board = copy.deepcopy(board)
                     fake_move = Move(king_pos, test_square)
                     new_board.make_move(fake_move)
+                    print(new_board.print())
 
                     if in_check(new_board):
                         return False
@@ -153,11 +164,11 @@ def gen_king_moves(pos, board, castling=True):
     if castling:
         queenside_possible = check_castling_possibility(board, pos, 'queenside')
         if queenside_possible:
-            moves.append(Move(pos, (pos[0] - 2, pos[1]), flags='queenside castle'))
+            moves.append(Move(pos, (pos[0] - 2, pos[1]), flags=['queenside castle']))
 
         kingside_possible = check_castling_possibility(board, pos, 'kingside')
         if kingside_possible:
-            moves.append(Move(pos, (pos[0] + 2, pos[1]), flags='kingside castle'))
+            moves.append(Move(pos, (pos[0] + 2, pos[1]), flags=['kingside castle']))
 
     return moves
 

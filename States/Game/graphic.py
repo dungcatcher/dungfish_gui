@@ -14,9 +14,8 @@ piece_colour_to_y_value = {
 }
 
 
-class GraphicalPiece(pygame.sprite.Sprite):
+class GraphicalPiece:
     def __init__(self, pos, board_rect, piece_string):
-        super().__init__()
         self.pos = pos
         self.piece_string = piece_string
 
@@ -42,6 +41,7 @@ class GraphicalPiece(pygame.sprite.Sprite):
                                                            (board_rect.width / 8, board_rect.height / 8))
         self.dragging = False
         self.selected = False
+        self.hidden = False
 
         self.moves = []
 
@@ -69,11 +69,12 @@ class GraphicalPiece(pygame.sprite.Sprite):
         return False
 
     def make_move(self, move, game):
-        if move.flags == 'capture':
+        print(move.flags)
+        if 'capture' in move.flags:
             for piece in game.pieces:
                 if piece.pos == move.end:
                     game.pieces.remove(piece)
-        if move.flags == 'enpassant':
+        if 'enpassant' in move.flags:
             for piece in game.pieces:
                 if game.board.turn == 'w':
                     if piece.pos == (move.end[0], move.end[1] + 1):
@@ -81,23 +82,33 @@ class GraphicalPiece(pygame.sprite.Sprite):
                 else:
                     if piece.pos == (move.end[0], move.end[1] - 1):
                         game.pieces.remove(piece)
-        if move.flags == 'queenside castle':
+        if 'queenside castle' in move.flags:
             for piece in game.pieces:
                 if piece.pos == (move.end[0] - 2, move.end[1]):
                     piece.pos = (move.end[0] + 1, move.end[1])
                     piece.resize(game.board_rect)
-        if move.flags == 'kingside castle':
+        if 'kingside castle' in move.flags:
             for piece in game.pieces:
                 if piece.pos == (move.end[0] + 1, move.end[1]):
                     piece.pos = (move.end[0] - 1, move.end[1])
                     piece.resize(game.board_rect)
 
-        self.pos = move.end
-        self.resize(game.board_rect)
-        self.selected = False
-        self.moves = []
-
-        game.board.make_move(move, real=True)
+        if 'promotion' not in move.flags:
+            self.pos = move.end
+            self.resize(game.board_rect)
+            self.selected = False
+            self.moves = []
+            game.board.make_move(move, real=True)
+        else:
+            if move.promotion_type:
+                self.pos = move.end
+                self.resize(game.board_rect)
+                self.selected = False
+                self.moves = []
+                game.board.make_move(move, real=True)
+            else:
+                game.in_promotion = True
+                game.promotion_move = move
 
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
@@ -134,7 +145,7 @@ class GraphicalPiece(pygame.sprite.Sprite):
         if self.selected:
             App.window.blit(self.ghost_img, self.prev_rect)
             for move in self.moves:
-                if move.flags == 'capture' or move.flags == 'enpassant':
+                if 'capture' in move.flags or 'enpassant' in move.flags:
                     image = self.capture_marker
                 else:
                     image = self.move_circle
@@ -144,4 +155,38 @@ class GraphicalPiece(pygame.sprite.Sprite):
                             board_rect.top + move.end[1] * board_rect.height / 8 + board_rect.height / 16))
                 App.window.blit(image, marker_rect)
 
+        App.window.blit(self.image, self.rect)
+
+
+class PromotionPiece:
+    def __init__(self, piece_string, game, index):
+        self.index = index
+        self.piece_string = piece_string
+        spritesheet_rect = pygame.Rect(
+            piece_letter_to_x_value[piece_string[1]] * piece_spritesheet.piece_size,
+            piece_colour_to_y_value[piece_string[0]] * piece_spritesheet.piece_size,
+            piece_spritesheet.piece_size, piece_spritesheet.piece_size
+        )
+        self.orig_image = piece_spritesheet.get_image_at(spritesheet_rect)
+        self.image = pygame.transform.smoothscale(self.orig_image, (game.board_rect.width / 8, game.board_rect.height / 8))
+        self.rect = self.image.get_rect()
+        self.hovered = False
+
+    def update(self, game):
+        offset = -self.index if self.piece_string[0] == 'b' else self.index
+
+        self.rect.topleft = (game.board_rect.left + (game.board_rect.width / 8) * (game.promotion_move.end[0]),
+                             game.board_rect.top + (game.board_rect.height / 8) * (game.promotion_move.end[1] + offset))
+
+        if self.rect.collidepoint(pygame.mouse.get_pos()):
+            self.hovered = True
+            if App.left_click:
+                game.selected_promotion = self.piece_string[1]
+        else:
+            self.hovered = False
+
+    def draw(self):
+        bg_colour = (255, 255, 255) if not self.hovered else (200, 200, 200)
+
+        pygame.draw.rect(App.window, bg_colour, self.rect)
         App.window.blit(self.image, self.rect)

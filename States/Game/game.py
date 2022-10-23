@@ -1,22 +1,12 @@
 import pygame
-from subprocess import Popen, PIPE
 import threading
 
 from States.state import State
 from app import App
 from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
+from .engine import read_engine_output
 from .movegen import get_move_string
-
-
-def read_engine_output():
-    cmd = r'C:\Users\User\PycharmProjects\dungfish_gui\Assets\stockfish_15_x64_popcnt.exe'
-    p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding='UTF8')
-    p.stdin.write('go perft 1\n')
-    p.stdin.flush()
-    while True:
-        response = p.stdout.readline()
-        print(response)
 
 
 class Game(State):
@@ -110,6 +100,3 @@ class Game(State):
             for promotion_piece in self.promotion_pieces:
                 if promotion_piece.piece_string[0] == self.board.turn:
                     promotion_piece.draw()
-
-
-

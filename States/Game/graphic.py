@@ -127,6 +127,8 @@ class GraphicalPiece:
         else:
             if not ('promotion' in move.flags and move.promotion_type):
                 capture_sound.play()
+            if 'enpassant' in move.flags:
+                capture_sound.play()
 
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),

@@ -1,17 +1,12 @@
 from .constants import SQUARE_LETTER_TABLE
+from.engine import send_to_engine
+
 
 class Board:
     def __init__(self):
-        self.position = [
-            ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
-            ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
-            [None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None],
-            ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
-            ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr']
-        ]
+        self.fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+        self.position = self.load_fen(self.fen)
+
         self.turn = 'w'
         self.wk_pos = (4, 7)
         self.bk_pos = (4, 0)
@@ -38,6 +33,31 @@ class Board:
             string += '\n'
 
         return string
+
+    def load_fen(self, fen: str):
+        position = [[None for _ in range(8)] for _ in range(8)]
+        split_fen = fen.split()
+
+        position_fen = split_fen[0]
+
+        row = 0
+        col = 0
+        for char in position_fen:
+            if char.isalpha():
+                if char.isupper():
+                    position[row][col] = f'w{char.lower()}'
+                else:
+                    position[row][col] = f'b{char}'
+            if char.isnumeric():
+                col += int(char)
+
+            if char == '/':
+                row += 1
+                col = 0
+            else:
+                col += 1
+
+        return position
 
     def get_fen(self):
         fen = ""
@@ -156,4 +176,6 @@ class Board:
 
         if real:
             self.turn = 'b' if self.turn == 'w' else 'w'
-            print(self.get_fen())
+            self.fen = self.get_fen()
+            send_to_engine(f'position fen {self.fen}')
+            send_to_engine(f'go movetime 1000')

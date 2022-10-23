@@ -118,6 +118,7 @@ class GraphicalPiece:
                 self.moves = []
                 game.board.make_move(move, real=True)
             else:
+                self.hidden = True
                 game.in_promotion = True
                 game.promotion_move = move
 
@@ -158,20 +159,21 @@ class GraphicalPiece:
                 self.dragging = False
 
     def draw(self, board_rect):
-        if self.selected:
-            App.window.blit(self.ghost_img, self.prev_rect)
-            for move in self.moves:
-                if 'capture' in move.flags or 'enpassant' in move.flags:
-                    image = self.capture_marker
-                else:
-                    image = self.move_circle
+        if not self.hidden:
+            if self.selected:
+                App.window.blit(self.ghost_img, self.prev_rect)
+                for move in self.moves:
+                    if 'capture' in move.flags or 'enpassant' in move.flags:
+                        image = self.capture_marker
+                    else:
+                        image = self.move_circle
 
-                marker_rect = image.get_rect(
-                    center=(board_rect.left + move.end[0] * board_rect.width / 8 + board_rect.width / 16,
-                            board_rect.top + move.end[1] * board_rect.height / 8 + board_rect.height / 16))
-                App.window.blit(image, marker_rect)
+                    marker_rect = image.get_rect(
+                        center=(board_rect.left + move.end[0] * board_rect.width / 8 + board_rect.width / 16,
+                                board_rect.top + move.end[1] * board_rect.height / 8 + board_rect.height / 16))
+                    App.window.blit(image, marker_rect)
 
-        App.window.blit(self.image, self.rect)
+            App.window.blit(self.image, self.rect)
 
 
 class PromotionPiece:

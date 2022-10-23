@@ -87,6 +87,7 @@ class Game(State):
                     if piece.pos == self.promotion_move.start:
                         self.promotion_move.promotion_type = self.selected_promotion
                         piece.make_move(self.promotion_move, self)
+                        piece.hidden = False
                         self.in_promotion = False
                         self.selected_promotion = None
                         self.promotion_move = None

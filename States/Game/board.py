@@ -1,3 +1,5 @@
+from .constants import SQUARE_LETTER_TABLE
+
 class Board:
     def __init__(self):
         self.position = [
@@ -18,6 +20,8 @@ class Board:
             'w': {'queenside': True, 'kingside': True},
             'b': {'queenside': True, 'kingside': True}
         }
+        self.halfmoves = 0
+        self.fullmoves = 1
 
     def print(self):
         string = ""
@@ -34,6 +38,63 @@ class Board:
             string += '\n'
 
         return string
+
+    def get_fen(self):
+        fen = ""
+
+        # Piece locations
+        empty = 0
+        for y in range(8):
+            for x in range(8):
+                target_piece = self.position[y][x]
+                if target_piece:
+                    if empty > 0:
+                        fen += str(empty)
+                        empty = 0
+
+                    if target_piece[0] == 'b':
+                        fen += target_piece[1]
+                    else:
+                        fen += target_piece[1].upper()
+                else:
+                    empty += 1
+
+            if empty > 0:
+                fen += str(empty)
+                empty = 0
+            if y != 7:
+                fen += '/'
+
+        # Turn
+        fen += f' {self.turn}'
+
+        castling_string = " "
+        # Castling
+        if self.castling['w']['kingside']:
+            castling_string += 'K'
+        if self.castling['w']['queenside']:
+            castling_string += 'Q'
+        if self.castling['b']['kingside']:
+            castling_string += 'k'
+        if self.castling['b']['queenside']:
+            castling_string += 'q'
+
+        if castling_string == " ":
+            castling_string += '-'
+        fen += castling_string
+
+        # En passant
+        if self.ep_square:
+            square = SQUARE_LETTER_TABLE[self.ep_square[1]][self.ep_square[0]]
+            fen += f' {square}'
+        else:
+            fen += ' -'
+
+        # Moves
+        fen += f' {self.halfmoves}'
+        fen += f' {self.fullmoves}'
+
+        return fen
 
     def make_move(self, move, real=False):  # real means it is played on the real board
         piece = self.position[move.start[1]][move.start[0]]
@@ -89,5 +150,10 @@ class Board:
                 if self.position[y][x] == 'bk':
                     self.bk_pos = (x, y)
 
+        self.halfmoves += 1
+        if self.turn == 'b':
+            self.fullmoves += 1
+
         if real:
             self.turn = 'b' if self.turn == 'w' else 'w'
+            print(self.get_fen())

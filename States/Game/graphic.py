@@ -8,10 +8,10 @@ from app import App
 piece_spritesheet = Spritesheet('./Assets/chess_pieces.png')
 
 piece_letter_to_x_value = {
-    'q': 0, 'k': 1, 'r': 2, 'n': 3, 'b': 4, 'p': 5
+    'k': 0, 'q': 1, 'b': 2, 'n': 3, 'r': 4, 'p': 5
 }
 piece_colour_to_y_value = {
-    'b': 0, 'w': 1
+    'w': 0, 'b': 1
 }
 
 move_sound = pygame.mixer.Sound('./Assets/move.ogg')

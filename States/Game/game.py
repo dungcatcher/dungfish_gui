@@ -5,8 +5,8 @@ from States.state import State
 from app import App
 from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
-from .engine import read_engine_output
-from .movegen import get_move_string
+from .engine import read_engine_output, Engine
+from. constants import square_to_pos
 
 
 class Game(State):
@@ -64,6 +64,21 @@ class Game(State):
             promotion_piece.resize(self)
 
     def update(self):
+        if self.board.turn == 'b':
+            if Engine.best_move:
+                start_pos = square_to_pos(Engine.best_move[0:2])
+                end_pos = square_to_pos(Engine.best_move[2:])
+                print(start_pos)
+
+                for piece in self.pieces:
+                    if piece.piece_string[0] == 'b':
+                        if piece.pos == start_pos:
+                            piece.gen_moves(self.board)
+                            for move in piece.moves:
+                                if move.end == end_pos:
+                                    target_move = move
+                                    piece.make_move(target_move, self)
+
         if not self.in_promotion:
             for piece in self.pieces:
                 piece.update(self)
@@ -82,6 +97,7 @@ class Game(State):
                         self.selected_promotion = None
                         self.promotion_move = None
                         break
+
         self.draw()
 
     def draw(self):

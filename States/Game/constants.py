@@ -8,3 +8,20 @@ SQUARE_LETTER_TABLE = [
     ['a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2'],
     ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']
 ]
+
+file_letter_to_number = {
+    'a': 0,
+    'b': 1,
+    'c': 2,
+    'd': 3,
+    'e': 4,
+    'f': 5,
+    'g': 6,
+    'h': 7
+}
+
+
+def square_to_pos(square):
+    file_num = file_letter_to_number[square[0]]
+    row_num = 7 - (int(square[1]) - 1)
+    return file_num, row_num

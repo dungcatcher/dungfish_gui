@@ -177,5 +177,6 @@ class Board:
         if real:
             self.turn = 'b' if self.turn == 'w' else 'w'
             self.fen = self.get_fen()
-            send_to_engine(f'position fen {self.fen}')
-            send_to_engine(f'go movetime 1000')
+            if self.turn == 'b':
+                send_to_engine(f'position fen {self.fen}')
+                send_to_engine(f'go movetime 1000')

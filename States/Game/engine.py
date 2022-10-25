@@ -20,4 +20,5 @@ def read_engine_output():
         response = Engine.task.stdout.readline()
         if 'bestmove' in response:
             bestmove_response = response.split()
-            Engine.best_move = bestmove_response[1]
+            if bestmove_response[1] != '(none)':
+                Engine.best_move = bestmove_response[1]

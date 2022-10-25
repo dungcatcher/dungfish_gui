@@ -171,6 +171,22 @@ def gen_king_moves(pos, board, castling=True):
     return moves
 
 
+def get_game_state(board):  # Checkmate, stalemate or playing
+    for y in range(8):
+        for x in range(8):
+            target_piece = board.position[y][x]
+            if target_piece:
+                if target_piece[0] == board.turn:
+                    moves = gen_moves((x, y), board, board.turn)
+                    if moves:
+                        return 'playing'
+
+    if in_check(board):
+        return 'checkmate'
+    else:
+        return 'stalemate'
+
+
 def check_attacking_pieces(moves, board, target_pieces):
     for move in moves:
         target_piece = board.position[move.end[1]][move.end[0]]

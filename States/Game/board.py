@@ -1,5 +1,6 @@
 from .constants import SQUARE_LETTER_TABLE
-from.engine import send_to_engine
+from .engine import send_to_engine
+from .movegen import get_game_state
 
 
 class Board:
@@ -17,6 +18,7 @@ class Board:
         }
         self.halfmoves = 0
         self.fullmoves = 1
+        self.state = 'playing'
 
     def print(self):
         string = ""
@@ -177,6 +179,8 @@ class Board:
         if real:
             self.turn = 'b' if self.turn == 'w' else 'w'
             self.fen = self.get_fen()
-            if self.turn == 'b':
+            self.state = get_game_state(self)
+            print(self.state)
+            if self.turn == 'b' and self.state == 'playing':
                 send_to_engine(f'position fen {self.fen}')
                 send_to_engine(f'go movetime 1000')

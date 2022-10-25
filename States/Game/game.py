@@ -1,4 +1,5 @@
 import pygame
+import pygame.freetype
 import threading
 
 from States.state import State
@@ -6,7 +7,7 @@ from app import App
 from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .engine import read_engine_output, Engine
-from. constants import square_to_pos
+from .constants import square_to_pos
 
 
 class Game(State):
@@ -21,8 +22,15 @@ class Game(State):
                 (self.orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width()
             )
         )
-        self.board = Board()
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
+        self.orig_end_screen_image = pygame.image.load('./Assets/end_screen.png').convert_alpha()
+        self.end_screen_image = pygame.transform.smoothscale(
+            self.orig_end_screen_image, (0.6 * self.board_rect.width, 0.8 * self.board_rect.height)
+        )
+        self.end_screen_rect = self.end_screen_image.get_rect(center=self.board_rect.center)
+        self.end_screen_font = pygame.freetype.SysFont('arial', self.board_rect.height * 0.05)
+
+        self.board = Board()
         self.pieces = []
 
         # Load all graphical pieces
@@ -46,7 +54,16 @@ class Game(State):
 
         engine_thread = threading.Thread(name='read_engine_output', target=read_engine_output, daemon=True)
         engine_thread.start()
-        # read_engine_output()
+
+    def reset(self):
+        self.board = Board()
+        self.pieces = []
+
+        # Load all graphical pieces
+        for y in range(8):
+            for x in range(8):
+                if self.board.position[y][x]:
+                    self.pieces.append(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
 
     def resize(self):
         self.board_image = pygame.transform.smoothscale(
@@ -57,6 +74,10 @@ class Game(State):
         )
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
+        self.end_screen_image = pygame.transform.smoothscale(
+            self.orig_end_screen_image, (0.6 * self.board_rect.width, 0.8 * self.board_rect.height)
+        )
+        self.end_screen_rect = self.end_screen_image.get_rect(center=self.board_rect.center)
 
         for piece in self.pieces:
             piece.resize(self.board_rect)
@@ -68,7 +89,6 @@ class Game(State):
             if Engine.best_move:
                 start_pos = square_to_pos(Engine.best_move[0:2])
                 end_pos = square_to_pos(Engine.best_move[2:])
-                print(start_pos)
 
                 for piece in self.pieces:
                     if piece.piece_string[0] == 'b':
@@ -98,6 +118,8 @@ class Game(State):
                         self.promotion_move = None
                         break
 
+        # print(self.board.state)
+
         self.draw()
 
     def draw(self):
@@ -116,3 +138,23 @@ class Game(State):
             for promotion_piece in self.promotion_pieces:
                 if promotion_piece.piece_string[0] == self.board.turn:
                     promotion_piece.draw()
+
+        if self.board.state != 'playing':
+            transparent_surf = pygame.Surface(self.board_rect.size, pygame.SRCALPHA, 32)
+            transparent_surf.fill((0, 0, 0, 64))
+            App.window.blit(transparent_surf, self.board_rect)
+
+            App.window.blit(self.end_screen_image, self.end_screen_rect)
+            if self.board.state == 'checkmate':
+                if self.board.turn == 'w':
+                    result = 'lost'
+                else:
+                    result = 'won'
+            else:
+                result = 'drew'
+
+            text_surf, text_rect = self.end_screen_font.render(f'You {result} by {self.board.state}!', (255, 255, 255))
+            text_rect.center = self.end_screen_rect.centerx, self.end_screen_rect.top + 0.15 * self.end_screen_rect.height
+            App.window.blit(text_surf, text_rect)
+
+            self.reset()

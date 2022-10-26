@@ -1,6 +1,5 @@
 from .state import State
 from app import App
-from util import Button
 
 
 class Options(State):

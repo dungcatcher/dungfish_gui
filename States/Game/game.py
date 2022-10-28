@@ -8,12 +8,14 @@ from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .engine import read_engine_output, Engine
 from .constants import square_to_pos
+from ..button import GameButton
 
 
 class Game(State):
     def __init__(self):
         super().__init__()
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
+        self.move_segment_rect = pygame.Rect(0.7 * App.window.get_width(), 0, 0.3 * App.window.get_width(), App.window.get_height())
 
         self.orig_image = pygame.image.load('./Assets/board.png').convert_alpha()
         self.board_image = pygame.transform.smoothscale(
@@ -23,6 +25,11 @@ class Game(State):
             )
         )
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
+        self.buttons = [
+            GameButton((self.move_segment_rect.centerx, 0.9 * self.move_segment_rect.height), 'RESTART',
+                       (50, 50, 50), (0.6 * self.move_segment_rect.width, 0.06 * self.move_segment_rect.height))
+        ]
+
         self.orig_end_screen_image = pygame.image.load('./Assets/end_screen.png').convert_alpha()
         self.end_screen_image = pygame.transform.smoothscale(
             self.orig_end_screen_image, (0.6 * self.board_rect.width, 0.8 * self.board_rect.height)
@@ -58,6 +65,7 @@ class Game(State):
     def reset(self):
         self.board = Board()
         self.pieces = []
+        Engine.best_move = None
 
         # Load all graphical pieces
         for y in range(8):
@@ -73,6 +81,8 @@ class Game(State):
             )
         )
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
+        self.move_segment_rect = pygame.Rect(0.7 * App.window.get_width(), 0, 0.3 * App.window.get_width(),
+                                             App.window.get_height())
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
         self.end_screen_image = pygame.transform.smoothscale(
             self.orig_end_screen_image, (0.6 * self.board_rect.width, 0.8 * self.board_rect.height)
@@ -85,6 +95,13 @@ class Game(State):
             promotion_piece.resize(self)
 
     def update(self):
+        for button in self.buttons:
+            button.update()
+            if button.hovered:
+                if App.left_click:
+                    if button.text == 'RESTART':
+                        self.reset()
+
         if self.board.turn == 'b':
             if Engine.best_move:
                 start_pos = square_to_pos(Engine.best_move[0:2])
@@ -129,6 +146,9 @@ class Game(State):
         App.window.blit(self.board_image, self.board_rect)
         for piece in self.pieces:
             piece.draw(self.board_rect)
+
+        for button in self.buttons:
+            button.draw()
 
         if self.in_promotion:
             transparent_surf = pygame.Surface(self.board_rect.size, pygame.SRCALPHA, 32)

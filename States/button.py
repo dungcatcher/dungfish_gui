@@ -61,6 +61,36 @@ class GameButton(Button):
         self.colour = colour
         self.size = size
 
-        self.rect = pygame.Rect(pos, size)
+        self.rect = pygame.Rect(0, 0, size[0], size[1])
+        self.rect.center = self.pos
+        self.font = pygame.freetype.SysFont('arial', int(self.rect.height * 0.5))
+
+    def draw(self):
+        pygame.draw.rect(App.window, self.colour, self.rect)
+
+        text_colour = (255, 255, 255) if self.hovered else (200, 200, 200)
+        text_surf, text_rect = self.font.render(self.text, text_colour)
+        text_rect.center = self.rect.center
+        App.window.blit(text_surf, text_rect)
+
+
+class OptionsButton(Button):
+    def __init__(self, pos, text, colour, size):
+        super().__init__(pos, text)
+
+        self.colour = colour
+        self.size = size
+
+        self.rect = pygame.Rect(0, 0, self.size[0], self.size[1])
+        self.rect.center = self.pos
+        self.font = pygame.freetype.SysFont('arial', int(self.rect.height * 0.5))
+
+    def draw(self):
+        pygame.draw.rect(App.window, (15, 15, 15), self.rect, border_radius=5)
+
+        option_surf, option_rect = self.font.render(self.text, self.colour)
+        option_rect.midleft = self.rect.left + self.rect.width * 0.05, self.rect.centery
+        App.window.blit(option_surf, option_rect)
+
 
 

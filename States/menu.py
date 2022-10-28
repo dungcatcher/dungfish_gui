@@ -7,8 +7,8 @@ class Menu(State):
     def __init__(self):
         super().__init__()
         self.buttons = [
-            MenuButton((0.5, 0.3), 'PLAY', 'game'),
-            MenuButton((0.5, 0.5), 'OPTIONS', 'options')
+            MenuButton((0.5, 0.3), 'PLAY'),
+            MenuButton((0.5, 0.5), 'OPTIONS')
         ]
 
     def resize(self):

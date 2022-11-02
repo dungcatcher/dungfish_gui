@@ -28,6 +28,12 @@ class Menu(State):
         )
 
     def resize(self):
+        self.button_image = pygame.transform.smoothscale(
+            self.button_orig_image, (
+                (self.button_orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width(),
+                (self.button_orig_image.get_height() / App.HIGH_RES[1]) * App.window.get_height()
+            )
+        )
         self.button_array = ButtonArray(
             App.window, App.window.get_width() / 2 - self.button_image.get_width() / 2, App.window.get_height() * 0.3,
             self.button_image.get_width(), 3 * self.button_image.get_height(), (1, 2),
@@ -40,7 +46,8 @@ class Menu(State):
 
     def update(self):
         self.draw()
-        pygame_widgets.update(pygame.event.get())
+        self.button_array.listen(App.events)
 
     def draw(self):
         App.window.fill((9, 14, 23))
+        self.button_array.draw()

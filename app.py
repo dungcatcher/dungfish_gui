@@ -15,6 +15,7 @@ class App:
     _current_state = None
 
     left_click = False
+    events = None
 
     @staticmethod
     def init_states(state_dict, start_state_name):
@@ -34,7 +35,8 @@ class App:
     @staticmethod
     def event_loop():
         App.left_click = False
-        for event in pygame.event.get():
+        App.events = pygame.event.get()
+        for event in App.events:
             if event.type == pygame.QUIT:
                 App._done = True
             if event.type == pygame.VIDEORESIZE:

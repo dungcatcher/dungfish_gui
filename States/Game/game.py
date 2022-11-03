@@ -25,13 +25,7 @@ class Game(State):
             )
         )
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
-        self.buttons = [
-            Button(
-                App.window, self.move_segment_rect.centerx - int(0.3 * self.move_segment_rect.width),
-                int(0.9 * self.move_segment_rect.height), int(0.6 * self.move_segment_rect.width),
-                int(0.06 * self.move_segment_rect.height), onClick=self.reset(), text='RESTART'
-            )
-        ]
+        self.buttons = self.gen_buttons()
 
         self.orig_end_screen_image = pygame.image.load('./Assets/end_screen.png').convert_alpha()
         self.end_screen_image = pygame.transform.smoothscale(
@@ -65,6 +59,16 @@ class Game(State):
         engine_thread = threading.Thread(name='read_engine_output', target=read_engine_output, daemon=True)
         engine_thread.start()
 
+    def gen_buttons(self):
+        buttons = [
+            Button(
+                App.window, self.move_segment_rect.centerx - int(0.3 * self.move_segment_rect.width),
+                int(0.9 * self.move_segment_rect.height), int(0.6 * self.move_segment_rect.width),
+                int(0.06 * self.move_segment_rect.height), onClick=lambda: self.reset(), text='RESTART'
+            )
+        ]
+        return buttons
+
     def reset(self):
         self.board = Board()
         self.pieces = []
@@ -96,6 +100,8 @@ class Game(State):
             piece.resize(self.board_rect)
         for promotion_piece in self.promotion_pieces:
             promotion_piece.resize(self)
+
+        self.buttons = self.gen_buttons()
 
     def update(self):
         if self.board.turn == 'b':

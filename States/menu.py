@@ -17,7 +17,10 @@ class Menu(State):
                 (self.button_orig_image.get_height() / App.HIGH_RES[1]) * App.window.get_height()
             )
         )
-        self.button_array = ButtonArray(
+        self.button_array = self.gen_button_array()
+
+    def gen_button_array(self):
+        button_array = ButtonArray(
             App.window, App.window.get_width() / 2 - self.button_image.get_width() / 2, App.window.get_height() * 0.3,
             self.button_image.get_width(), 3 * self.button_image.get_height(), (1, 2),
             texts=('PLAY', 'OPTIONS'), images=(self.button_image, self.button_image),
@@ -26,6 +29,7 @@ class Menu(State):
             textColours=((255, 255, 255), (255, 255, 255)), inactiveColours=((9, 14, 23), (9, 14, 23)),
             colour=(9, 14, 23), hoverColours=((9, 14, 23), (9, 14, 23)), pressedColours=((9, 14, 23), (9, 14, 23))
         )
+        return button_array
 
     def resize(self):
         self.button_image = pygame.transform.smoothscale(
@@ -34,19 +38,10 @@ class Menu(State):
                 (self.button_orig_image.get_height() / App.HIGH_RES[1]) * App.window.get_height()
             )
         )
-        self.button_array = ButtonArray(
-            App.window, App.window.get_width() / 2 - self.button_image.get_width() / 2, App.window.get_height() * 0.3,
-            self.button_image.get_width(), 3 * self.button_image.get_height(), (1, 2),
-            texts=('PLAY', 'OPTIONS'), images=(self.button_image, self.button_image),
-            onClicks=(lambda: self.change_state('game'), lambda: self.change_state('options')),
-            fontSizes=(int(0.7 * self.button_image.get_height()), int(0.7 * self.button_image.get_height())),
-            textColours=((255, 255, 255), (255, 255, 255)), inactiveColours=((9, 14, 23), (9, 14, 23)),
-            colour=(9, 14, 23), hoverColours=((9, 14, 23), (9, 14, 23)), pressedColours=((9, 14, 23), (9, 14, 23))
-        )
+        self.button_array = self.gen_button_array()
 
     def update(self):
         self.draw()
-        self.button_array.listen(App.events)
 
     def draw(self):
         App.window.fill((9, 14, 23))

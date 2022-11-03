@@ -1,5 +1,6 @@
 import pygame
 import pygame.freetype
+from pygame_widgets.button import Button
 import threading
 
 from States.state import State
@@ -8,7 +9,6 @@ from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .engine import read_engine_output, Engine
 from .constants import square_to_pos
-from ..button import GameButton
 
 
 class Game(State):
@@ -26,8 +26,11 @@ class Game(State):
         )
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
         self.buttons = [
-            GameButton((self.move_segment_rect.centerx, 0.9 * self.move_segment_rect.height), 'RESTART',
-                       (50, 50, 50), (0.6 * self.move_segment_rect.width, 0.06 * self.move_segment_rect.height))
+            Button(
+                App.window, self.move_segment_rect.centerx - int(0.3 * self.move_segment_rect.width),
+                int(0.9 * self.move_segment_rect.height), int(0.6 * self.move_segment_rect.width),
+                int(0.06 * self.move_segment_rect.height), onClick=self.reset(), text='RESTART'
+            )
         ]
 
         self.orig_end_screen_image = pygame.image.load('./Assets/end_screen.png').convert_alpha()
@@ -95,13 +98,6 @@ class Game(State):
             promotion_piece.resize(self)
 
     def update(self):
-        for button in self.buttons:
-            button.update()
-            if button.hovered:
-                if App.left_click:
-                    if button.text == 'RESTART':
-                        self.reset()
-
         if self.board.turn == 'b':
             if Engine.best_move:
                 start_pos = square_to_pos(Engine.best_move[0:2])

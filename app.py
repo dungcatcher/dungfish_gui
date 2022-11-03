@@ -1,5 +1,5 @@
 import pygame
-
+import pygame_widgets
 
 class App:
     pygame.init()
@@ -30,6 +30,7 @@ class App:
     def update():
         if App._current_state.done:
             App.flip_state()
+        pygame_widgets.update(App.events)
         App._current_state.update()
 
     @staticmethod

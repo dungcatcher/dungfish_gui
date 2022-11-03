@@ -4,11 +4,12 @@ from pygame_widgets.button import Button
 import threading
 
 from States.state import State
+from States.options import options
 from app import App
 from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .engine import read_engine_output, Engine
-from .constants import square_to_pos
+from .constants import square_to_pos, turn_to_word
 
 
 class Game(State):
@@ -104,7 +105,7 @@ class Game(State):
         self.buttons = self.gen_buttons()
 
     def update(self):
-        if self.board.turn == 'b':
+        if turn_to_word[self.board.turn] != options['player_colour']:
             if Engine.best_move:
                 start_pos = square_to_pos(Engine.best_move[0:2])
                 end_pos = square_to_pos(Engine.best_move[2:])

@@ -20,6 +20,11 @@ file_letter_to_number = {
     'h': 7
 }
 
+turn_to_word = {
+    'b': 'BLACK',
+    'w': 'WHITE'
+}
+
 
 def square_to_pos(square):
     file_num = file_letter_to_number[square[0]]

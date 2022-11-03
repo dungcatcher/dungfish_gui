@@ -47,6 +47,11 @@ class App:
                 App.left_click = True
 
     @staticmethod
+    def close():
+        for state in App._state_dict.values():
+            state.close()
+
+    @staticmethod
     def loop():
         while not App._done:
             App.event_loop()
@@ -54,4 +59,5 @@ class App:
 
             pygame.display.update()
 
+        App.close()
         pygame.quit()

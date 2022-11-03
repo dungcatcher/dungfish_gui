@@ -13,6 +13,9 @@ class State:
     def draw(self):
         pass
 
+    def close(self):
+        pass
+
     def change_state(self, state):
         self.next = state
         self.done = True

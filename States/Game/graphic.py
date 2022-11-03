@@ -13,9 +13,9 @@ piece_letter_to_x_value = {
 piece_colour_to_y_value = {
     'w': 0, 'b': 1
 }
-#
-# move_sound = pygame.mixer.Sound('./Assets/move.ogg')
-# capture_sound = pygame.mixer.Sound('./Assets/capture.ogg')
+
+move_sound = pygame.mixer.Sound('./Assets/move.ogg')
+capture_sound = pygame.mixer.Sound('./Assets/capture.ogg')
 
 
 class GraphicalPiece:
@@ -122,13 +122,13 @@ class GraphicalPiece:
                 game.in_promotion = True
                 game.promotion_move = move
 
-        # if 'capture' not in move.flags:
-        #     move_sound.play()
-        # else:
-        #     if not ('promotion' in move.flags and move.promotion_type):
-        #         capture_sound.play()
-        #     if 'enpassant' in move.flags:
-        #         capture_sound.play()
+        if 'capture' not in move.flags:
+            move_sound.play()
+        else:
+            if not ('promotion' in move.flags and move.promotion_type):
+                capture_sound.play()
+            if 'enpassant' in move.flags:
+                capture_sound.play()
 
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),

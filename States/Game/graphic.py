@@ -150,6 +150,7 @@ class GraphicalPiece:
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
                            int((pygame.mouse.get_pos()[1] - game.board_rect.top) // (game.board_rect.height / 8)))
+        square_hovering = (7 - square_hovering[0], 7 - square_hovering[1]) if game.player_colour == 'b' else square_hovering
 
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):

@@ -163,7 +163,7 @@ class Game(State):
         pygame.draw.rect(App.window, (20, 20, 20), self.board_segment_rect)
 
         App.window.blit(self.board_image, self.board_rect)
-        for piece in self.pieces:
+        for piece in sorted(self.pieces, key=lambda a: a.selected):  # Selected pieces always above
             piece.draw(self)
 
         for button in self.buttons:

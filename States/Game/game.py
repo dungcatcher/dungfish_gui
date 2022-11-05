@@ -8,7 +8,7 @@ from States.options import options
 from app import App
 from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
-from .engine import read_engine_output, Engine
+from .engine import read_engine_output, Engine, send_to_engine
 from .constants import square_to_pos, turn_to_word
 from .clock import Clock
 
@@ -18,6 +18,7 @@ class Game(State):
         super().__init__()
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
         self.move_segment_rect = pygame.Rect(0.7 * App.window.get_width(), 0, 0.3 * App.window.get_width(), App.window.get_height())
+        self.player_colour = 'w' if options['player_colour'] == 'WHITE' else 'b'
 
         self.orig_image = pygame.image.load('./Assets/board.png').convert_alpha()
         board_size = min(0.75 * self.board_segment_rect.height, 0.75 * self.board_segment_rect.width)
@@ -41,7 +42,7 @@ class Game(State):
         for y in range(8):
             for x in range(8):
                 if self.board.position[y][x]:
-                    self.pieces.append(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
+                    self.pieces.append(GraphicalPiece((x, y), self, self.board.position[y][x]))
 
         self.in_promotion = False
         self.promotion_move = None
@@ -54,13 +55,23 @@ class Game(State):
                 promotion_piece = PromotionPiece(colour + piece_letter, self, i)
                 self.promotion_pieces.append(promotion_piece)
 
-        self.player_colour = 'w'
-        self.orientation = 'w'  # White on the bottom, black on top
-
         self.clocks = [Clock(self, 'w'), Clock(self, 'b')]
 
         engine_thread = threading.Thread(name='read_engine_output', target=read_engine_output, daemon=True)
         engine_thread.start()
+
+        if self.board.turn != self.player_colour:
+            self.send_position_to_engine()
+
+    def send_position_to_engine(self):
+        if self.board.turn != self.player_colour and self.board.state == 'playing':
+            for clock in self.clocks:
+                if clock.colour != self.player_colour:
+                    send_to_engine(f'{clock.colour}time {clock.time_remaining * 1000}')
+                    send_to_engine(f'{clock.colour}inc {clock.increment * 1000}')
+
+            send_to_engine(f'position fen {self.board.fen}')
+            send_to_engine(f'go movetime 1000')
 
     def gen_buttons(self):
         buttons = [
@@ -81,7 +92,7 @@ class Game(State):
         for y in range(8):
             for x in range(8):
                 if self.board.position[y][x]:
-                    self.pieces.append(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
+                    self.pieces.append(GraphicalPiece((x, y), self, self.board.position[y][x]))
 
         for clock in self.clocks:
             clock.reset()
@@ -102,7 +113,7 @@ class Game(State):
         self.end_screen_rect = self.end_screen_image.get_rect(center=self.board_rect.center)
 
         for piece in self.pieces:
-            piece.resize(self.board_rect)
+            piece.resize(self)
         for promotion_piece in self.promotion_pieces:
             promotion_piece.resize(self)
 
@@ -115,7 +126,7 @@ class Game(State):
                 end_pos = square_to_pos(Engine.best_move[2:])
 
                 for piece in self.pieces:
-                    if piece.piece_string[0] == 'b':
+                    if piece.piece_string[0] != self.player_colour:
                         if piece.pos == start_pos:
                             piece.gen_moves(self.board)
                             for move in piece.moves:
@@ -153,7 +164,7 @@ class Game(State):
 
         App.window.blit(self.board_image, self.board_rect)
         for piece in self.pieces:
-            piece.draw(self.board_rect)
+            piece.draw(self)
 
         for button in self.buttons:
             button.draw()
@@ -188,4 +199,4 @@ class Game(State):
             self.reset()
 
         for clock in self.clocks:
-            clock.draw()
+            clock.draw(self)

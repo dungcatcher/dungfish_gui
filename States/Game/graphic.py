@@ -1,5 +1,4 @@
 import pygame
-import threading
 
 from util import Spritesheet
 from .movegen import gen_moves
@@ -19,8 +18,9 @@ capture_sound = pygame.mixer.Sound('./Assets/capture.ogg')
 
 
 class GraphicalPiece:
-    def __init__(self, pos, board_rect, piece_string):
+    def __init__(self, pos, game, piece_string):
         self.pos = pos
+        self.flipped_pos = ()
         self.piece_string = piece_string
 
         self.orig_image = None
@@ -28,47 +28,52 @@ class GraphicalPiece:
         self.rect = None
         self.prev_rect = None
         self.ghost_img = None
-        self.load_image_from_piece_string(board_rect, piece_string)
+        self.load_image_from_piece_string(game, piece_string)
 
         self.orig_move_circle = pygame.image.load('./Assets/move_circle.png').convert_alpha()
         self.move_circle = pygame.transform.smoothscale(self.orig_move_circle,
-                                                        (board_rect.width / 8, board_rect.height / 8))
+                                                        (game.board_rect.width / 8, game.board_rect.height / 8))
         self.orig_capture_marker = pygame.image.load('./Assets/capture_marker.png').convert_alpha()
         self.capture_marker = pygame.transform.smoothscale(self.orig_capture_marker,
-                                                           (board_rect.width / 8, board_rect.height / 8))
+                                                           (game.board_rect.width / 8, game.board_rect.height / 8))
         self.dragging = False
         self.selected = False
         self.hidden = False
 
         self.moves = []
 
-    def load_image_from_piece_string(self, board_rect, piece_string):
+    def load_image_from_piece_string(self, game, piece_string):
         spritesheet_rect = pygame.Rect(
             piece_letter_to_x_value[piece_string[1]] * piece_spritesheet.piece_size,
             piece_colour_to_y_value[piece_string[0]] * piece_spritesheet.piece_size,
             piece_spritesheet.piece_size, piece_spritesheet.piece_size
         )
         self.orig_image = piece_spritesheet.get_image_at(spritesheet_rect)
-        self.image = pygame.transform.smoothscale(self.orig_image, (board_rect.width / 8, board_rect.height / 8))
+        self.image = pygame.transform.smoothscale(self.orig_image, (game.board_rect.width / 8, game.board_rect.height / 8))
+
+        pov_pos = (7 - self.pos[0], 7 - self.pos[1]) if game.player_colour == 'b' else self.pos
+
         self.rect = self.image.get_rect(
-            center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
-                    board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
+            center=(game.board_rect.left + pov_pos[0] * game.board_rect.width / 8 + game.board_rect.width / 16,
+                    game.board_rect.top + pov_pos[1] * game.board_rect.height / 8 + game.board_rect.height / 16))
         self.prev_rect = self.rect.copy()  # Rect before dragging
         self.ghost_img = self.image.copy()
         self.ghost_img.set_alpha(64)
 
-    def resize(self, board_rect):
-        self.image = pygame.transform.smoothscale(self.orig_image, (board_rect.width / 8, board_rect.height / 8))
+    def resize(self, game):
+        self.image = pygame.transform.smoothscale(self.orig_image, (game.board_rect.width / 8, game.board_rect.height / 8))
+
+        pov_pos = (7 - self.pos[0], 7 - self.pos[1]) if game.player_colour == 'b' else self.pos
         self.rect = self.image.get_rect(
-            center=(board_rect.left + self.pos[0] * board_rect.width / 8 + board_rect.width / 16,
-                    board_rect.top + self.pos[1] * board_rect.height / 8 + board_rect.height / 16))
+            center=(game.board_rect.left + pov_pos[0] * game.board_rect.width / 8 + game.board_rect.width / 16,
+                    game.board_rect.top + pov_pos[1] * game.board_rect.height / 8 + game.board_rect.height / 16))
         self.prev_rect = self.rect.copy()
         self.ghost_img = self.image.copy()
         self.ghost_img.set_alpha(64)
         self.move_circle = pygame.transform.smoothscale(self.orig_move_circle,
-                                                        (board_rect.width / 8, board_rect.height / 8))
+                                                        (game.board_rect.width / 8, game.board_rect.height / 8))
         self.capture_marker = pygame.transform.smoothscale(self.orig_capture_marker,
-                                                           (board_rect.width / 8, board_rect.height / 8))
+                                                           (game.board_rect.width / 8, game.board_rect.height / 8))
 
     def gen_moves(self, board):
         self.moves = gen_moves(self.pos, board, self.piece_string[0])
@@ -97,16 +102,16 @@ class GraphicalPiece:
             for piece in game.pieces:
                 if piece.pos == (move.end[0] - 2, move.end[1]):
                     piece.pos = (move.end[0] + 1, move.end[1])
-                    piece.resize(game.board_rect)
+                    piece.resize(game)
         if 'kingside castle' in move.flags:
             for piece in game.pieces:
                 if piece.pos == (move.end[0] + 1, move.end[1]):
                     piece.pos = (move.end[0] - 1, move.end[1])
-                    piece.resize(game.board_rect)
+                    piece.resize(game)
 
         if 'promotion' not in move.flags:
             self.pos = move.end
-            self.resize(game.board_rect)
+            self.resize(game)
             self.selected = False
             self.moves = []
             for clock in game.clocks:
@@ -115,6 +120,7 @@ class GraphicalPiece:
                 else:
                     clock.depress()
             game.board.make_move(move, real=True)
+            game.send_position_to_engine()
         else:
             if move.promotion_type:
                 self.pos = move.end
@@ -127,6 +133,7 @@ class GraphicalPiece:
                     else:
                         clock.depress()
                 game.board.make_move(move, real=True)
+                game.send_position_to_engine()
             else:
                 self.hidden = True
                 game.in_promotion = True
@@ -146,7 +153,7 @@ class GraphicalPiece:
 
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
-                if game.board.turn == self.piece_string[0]:
+                if game.board.turn == self.piece_string[0] and game.player_colour == self.piece_string[0]:
                     self.gen_moves(game.board)
                     self.selected = True
                     self.dragging = True
@@ -170,7 +177,7 @@ class GraphicalPiece:
 
                 self.dragging = False
 
-    def draw(self, board_rect):
+    def draw(self, game):
         if not self.hidden:
             if self.selected:
                 App.window.blit(self.ghost_img, self.prev_rect)
@@ -180,9 +187,10 @@ class GraphicalPiece:
                     else:
                         image = self.move_circle
 
+                    pov_move = (7 - move.end[0], 7 - move.end[1]) if game.player_colour == 'b' else move.end
                     marker_rect = image.get_rect(
-                        center=(board_rect.left + move.end[0] * board_rect.width / 8 + board_rect.width / 16,
-                                board_rect.top + move.end[1] * board_rect.height / 8 + board_rect.height / 16))
+                        center=(game.board_rect.left + pov_move[0] * game.board_rect.width / 8 + game.board_rect.width / 16,
+                                game.board_rect.top + pov_move[1] * game.board_rect.height / 8 + game.board_rect.height / 16))
                     App.window.blit(image, marker_rect)
 
             App.window.blit(self.image, self.rect)

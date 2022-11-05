@@ -33,7 +33,7 @@ class Clock:
         self.paused = True
         self.timeout = False
 
-        self.time_remaining = self.starting_time
+        self.time_remaining = 10
 
     def press(self):
         self.paused = True
@@ -47,11 +47,22 @@ class Clock:
         self.paused = True
         self.timeout = False
 
-    def update(self):
+    def resize(self, game):
+        self.container_rect = pygame.Rect(0, 0, game.board_rect.width,
+                                          (game.board_segment_rect.height - game.board_rect.height) / 2)
+        if self.colour == game.player_colour:
+            self.container_rect.topleft = game.board_rect.bottomleft
+        else:
+            self.container_rect.bottomleft = game.board_rect.topleft
+        self.name_font.size = int(self.container_rect.height * 0.4)
+        self.time_font.size = int(self.container_rect.height * 0.4)
+
+    def update(self, game):
         if not self.paused:
             self.time_remaining -= App.dt
             if self.time_remaining <= 0:
                 self.timeout = True
+                game.board.state = 'timeout'
         self.get_time_string()
 
     def get_time_string(self):

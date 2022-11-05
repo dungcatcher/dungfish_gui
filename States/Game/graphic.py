@@ -41,6 +41,8 @@ class GraphicalPiece:
         self.hidden = False
 
         self.moves = []
+        if game.board.turn == self.piece_string[0]:
+            self.gen_moves(game.board)
 
     def load_image_from_piece_string(self, game, piece_string):
         spritesheet_rect = pygame.Rect(
@@ -147,6 +149,10 @@ class GraphicalPiece:
             if 'enpassant' in move.flags:
                 capture_sound.play()
 
+        for piece in game.pieces:
+            if piece.piece_string[0] == game.board.turn:
+                piece.gen_moves(game.board)
+
     def update(self, game):
         square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
                            int((pygame.mouse.get_pos()[1] - game.board_rect.top) // (game.board_rect.height / 8)))
@@ -154,8 +160,9 @@ class GraphicalPiece:
 
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
-                if game.board.turn == self.piece_string[0] and game.player_colour == self.piece_string[0]:
-                    self.gen_moves(game.board)
+                if game.player_colour == self.piece_string[0]:
+                    if game.board.turn == self.piece_string[0]:
+                        self.gen_moves(game.board)
                     self.selected = True
                     self.dragging = True
             else:

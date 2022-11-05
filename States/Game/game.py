@@ -117,6 +117,9 @@ class Game(State):
         for promotion_piece in self.promotion_pieces:
             promotion_piece.resize(self)
 
+        for clock in self.clocks:
+            clock.resize(self)
+
         self.buttons = self.gen_buttons()
 
     def update(self):
@@ -154,7 +157,7 @@ class Game(State):
                         break
 
         for clock in self.clocks:
-            clock.update()
+            clock.update(self)
 
         self.draw()
 
@@ -184,8 +187,8 @@ class Game(State):
             App.window.blit(transparent_surf, self.board_rect)
 
             App.window.blit(self.end_screen_image, self.end_screen_rect)
-            if self.board.state == 'checkmate':
-                if self.board.turn == 'w':
+            if self.board.state == 'checkmate' or self.board.state == 'timeout':
+                if self.board.turn == self.player_colour:
                     result = 'lost'
                 else:
                     result = 'won'
@@ -195,8 +198,6 @@ class Game(State):
             text_surf, text_rect = self.end_screen_font.render(f'You {result} by {self.board.state}!', (255, 255, 255))
             text_rect.center = self.end_screen_rect.centerx, self.end_screen_rect.top + 0.15 * self.end_screen_rect.height
             App.window.blit(text_surf, text_rect)
-
-            self.reset()
 
         for clock in self.clocks:
             clock.draw(self)

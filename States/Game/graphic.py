@@ -109,6 +109,11 @@ class GraphicalPiece:
             self.resize(game.board_rect)
             self.selected = False
             self.moves = []
+            for clock in game.clocks:
+                if clock.colour == self.piece_string[0]:
+                    clock.press()
+                else:
+                    clock.depress()
             game.board.make_move(move, real=True)
         else:
             if move.promotion_type:
@@ -116,6 +121,11 @@ class GraphicalPiece:
                 self.load_image_from_piece_string(game.board_rect, self.piece_string[0] + move.promotion_type)
                 self.selected = False
                 self.moves = []
+                for clock in game.clocks:
+                    if clock.colour == self.piece_string[0]:
+                        clock.press()
+                    else:
+                        clock.depress()
                 game.board.make_move(move, real=True)
             else:
                 self.hidden = True

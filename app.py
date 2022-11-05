@@ -1,6 +1,7 @@
 import pygame
 import pygame_widgets
 
+
 class App:
     pygame.init()
     pygame.mixer.init()
@@ -13,9 +14,11 @@ class App:
     _done = False
     _state_dict = None
     _current_state = None
+    _clock = pygame.time.Clock()
 
     left_click = False
     events = None
+    dt = 0
 
     @staticmethod
     def init_states(state_dict, start_state_name):
@@ -54,10 +57,15 @@ class App:
     @staticmethod
     def loop():
         while not App._done:
-            App.event_loop()
-            App.update()
+            try:
+                App.dt = App._clock.tick(60) / 1000
 
-            pygame.display.update()
+                App.event_loop()
+                App.update()
+
+                pygame.display.update()
+            except KeyboardInterrupt:  # Handle Ctrl+c
+                App._done = True
 
         App.close()
         pygame.quit()

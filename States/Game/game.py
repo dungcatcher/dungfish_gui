@@ -10,6 +10,7 @@ from .graphic import GraphicalPiece, PromotionPiece
 from .board import Board
 from .engine import read_engine_output, Engine
 from .constants import square_to_pos, turn_to_word
+from .clock import Clock
 
 
 class Game(State):
@@ -19,11 +20,9 @@ class Game(State):
         self.move_segment_rect = pygame.Rect(0.7 * App.window.get_width(), 0, 0.3 * App.window.get_width(), App.window.get_height())
 
         self.orig_image = pygame.image.load('./Assets/board.png').convert_alpha()
+        board_size = min(0.75 * self.board_segment_rect.height, 0.75 * self.board_segment_rect.width)
         self.board_image = pygame.transform.smoothscale(
-            self.orig_image, (
-                (self.orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width(),
-                (self.orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width()
-            )
+            self.orig_image, (board_size, board_size)
         )
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
         self.buttons = self.gen_buttons()
@@ -56,6 +55,9 @@ class Game(State):
                 self.promotion_pieces.append(promotion_piece)
 
         self.player_colour = 'w'
+        self.orientation = 'w'  # White on the bottom, black on top
+
+        self.clocks = [Clock(self, 'w'), Clock(self, 'b')]
 
         engine_thread = threading.Thread(name='read_engine_output', target=read_engine_output, daemon=True)
         engine_thread.start()
@@ -81,16 +83,18 @@ class Game(State):
                 if self.board.position[y][x]:
                     self.pieces.append(GraphicalPiece((x, y), self.board_rect, self.board.position[y][x]))
 
+        for clock in self.clocks:
+            clock.reset()
+
     def resize(self):
-        self.board_image = pygame.transform.smoothscale(
-            self.orig_image, (
-                (self.orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width(),
-                (self.orig_image.get_width() / App.HIGH_RES[0]) * App.window.get_width()
-            )
-        )
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
         self.move_segment_rect = pygame.Rect(0.7 * App.window.get_width(), 0, 0.3 * App.window.get_width(),
                                              App.window.get_height())
+
+        board_size = min(0.75 * self.board_segment_rect.height, 0.75 * self.board_segment_rect.width)
+        self.board_image = pygame.transform.smoothscale(
+            self.orig_image, (board_size, board_size)
+        )
         self.board_rect = self.board_image.get_rect(center=self.board_segment_rect.center)
         self.end_screen_image = pygame.transform.smoothscale(
             self.orig_end_screen_image, (0.6 * self.board_rect.width, 0.8 * self.board_rect.height)
@@ -138,7 +142,8 @@ class Game(State):
                         self.promotion_move = None
                         break
 
-        # print(self.board.state)
+        for clock in self.clocks:
+            clock.update()
 
         self.draw()
 
@@ -181,3 +186,6 @@ class Game(State):
             App.window.blit(text_surf, text_rect)
 
             self.reset()
+
+        for clock in self.clocks:
+            clock.draw()

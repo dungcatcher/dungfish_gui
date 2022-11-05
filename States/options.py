@@ -33,15 +33,13 @@ class Options(State):
         text = self.clock_textbox.getText()
         split_text = text.split('+')
         if len(split_text) == 2:
-            starting_time, increment = None, None
             try:
-                starting_time = int(split_text[0])
-                increment = int(split_text[1])
+                int(split_text[0])
+                int(split_text[1])
             except ValueError:
                 print('Put in a real number')
 
-            options['starting_time'] = starting_time
-            options['increment'] = increment
+            options['clock_time'] = text
         else:
             print('starting time + increment')
 

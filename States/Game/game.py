@@ -2,6 +2,7 @@ import pygame
 import pygame.freetype
 from pygame_widgets.button import Button
 import threading
+import time
 
 from States.state import State
 from States.options import options
@@ -54,6 +55,11 @@ class Game(State):
             for colour in ['w', 'b']:
                 promotion_piece = PromotionPiece(colour + piece_letter, self, i)
                 self.promotion_pieces.append(promotion_piece)
+
+        self.premove = None
+
+        self.show_end_screen = False
+        self.game_over_time = None
 
         self.clocks = [Clock(self, 'w'), Clock(self, 'b')]
 
@@ -123,6 +129,13 @@ class Game(State):
         self.buttons = self.gen_buttons()
 
     def update(self):
+        if self.board.state != 'playing':
+            self.game_over_time = time.time()
+
+        if self.game_over_time:
+            if time.time() - self.game_over_time >= 1:  # Wait one second
+                self.show_end_screen = True
+
         if turn_to_word[self.board.turn] != options['player_colour']:
             if Engine.best_move:
                 start_pos = square_to_pos(Engine.best_move[0:2])
@@ -137,7 +150,7 @@ class Game(State):
                                     target_move = move
                                     piece.make_move(target_move, self)
 
-        if not self.in_promotion:
+        if not self.in_promotion and self.board.state == 'playing':
             for piece in self.pieces:
                 piece.update(self)
         else:
@@ -169,6 +182,16 @@ class Game(State):
         for piece in sorted(self.pieces, key=lambda a: a.selected):  # Selected pieces always above
             piece.draw(self)
 
+        if self.premove:
+            pov_premove_end = (7 - self.premove[1][0], 7 - self.premove[1][1]) if self.player_colour == 'b' else self.premove[1]
+
+            premove_rect = pygame.Rect(self.board_rect.left + pov_premove_end[0] * self.board_rect.width / 8,
+                                       self.board_rect.top + pov_premove_end[1] * self.board_rect.height / 8,
+                                       self.board_rect.width / 8, self.board_rect.height / 8)
+            premove_surf = pygame.Surface(premove_rect.size, pygame.SRCALPHA)
+            premove_surf.fill((255, 0, 0, 64))
+            App.window.blit(premove_surf, premove_rect)
+
         for button in self.buttons:
             button.draw()
 
@@ -181,7 +204,7 @@ class Game(State):
                 if promotion_piece.piece_string[0] == self.board.turn:
                     promotion_piece.draw()
 
-        if self.board.state != 'playing':
+        if self.show_end_screen:
             transparent_surf = pygame.Surface(self.board_rect.size, pygame.SRCALPHA, 32)
             transparent_surf.fill((0, 0, 0, 64))
             App.window.blit(transparent_surf, self.board_rect)

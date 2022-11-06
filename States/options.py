@@ -6,6 +6,7 @@ from .state import State
 from app import App
 from pygame_widgets.dropdown import Dropdown
 from pygame_widgets.textbox import TextBox
+from pygame_widgets.button import Button
 
 with open('States/options.json') as f:
     options = json.load(f)
@@ -23,9 +24,20 @@ class Options(State):
         )
         self.rect = self.image.get_rect(center=(App.window.get_width() / 2, App.window.get_height() / 2))
 
+        self.orig_back_arrow_image = pygame.image.load('./Assets/return arrow.png').convert_alpha()
+        self.back_arrow_image = pygame.transform.smoothscale(
+            self.orig_back_arrow_image, (
+                (self.orig_back_arrow_image.get_width() / App.HIGH_RES[0]) * App.window.get_width(),
+                (self.orig_back_arrow_image.get_height() / App.HIGH_RES[1]) * App.window.get_height()
+            )
+        )
+
         self.player_colour_dropdown = None
         self.clock_textbox = None
         self.widgets = None
+
+        self.back_button = None
+        self.buttons = None
         self.widget_font = pygame.freetype.SysFont('arial', int(self.rect.height * 0.07 * 0.4))
         self.gen_widgets()
 
@@ -56,12 +68,18 @@ class Options(State):
             placeholderText="e.g. 5+3", colour=(50, 50, 50), borderThickness=2, borderColour=(70, 70, 70),
             fontSize=int(self.rect.height * 0.07 * 0.8), textColour=(200, 200, 200)
         )
+        self.back_button = Button(
+            App.window, 0.02 * App.window.get_width(), 0.02 * App.window.get_height(),
+            self.back_arrow_image.get_width(), self.back_arrow_image.get_height(), onClick=lambda: self.change_state('menu'),
+            image=self.back_arrow_image, inactiveColour=(9, 14, 23), hoverColour=(9, 14, 23), pressedColour=(9, 14, 23)
+        )
 
         self.widget_font.size = int(self.rect.height * 0.07 * 0.4)
         self.widgets = {
             'PLAYER COLOUR': self.player_colour_dropdown,
             'TIME PER SIDE': self.clock_textbox
         }
+        self.buttons = [self.back_button]
 
     def resize(self):
         self.image = pygame.transform.smoothscale(
@@ -101,3 +119,5 @@ class Options(State):
                              (rect.centerx, rect.bottom - 0.1 * rect.height), width=2)
 
             widget.draw()
+        for button in self.buttons:
+            button.draw()

@@ -27,6 +27,7 @@ class App:
 
     @staticmethod
     def flip_state():
+        App._current_state.done = False
         App._current_state = App._state_dict[App._current_state.next]
 
     @staticmethod

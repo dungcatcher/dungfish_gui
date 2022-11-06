@@ -92,14 +92,20 @@ class GraphicalPiece:
             for piece in game.pieces:
                 if piece.pos == move.end:
                     game.pieces.remove(piece)
+                    if game.premove and piece.pos == game.premove[0]:
+                        game.premove = None
         if 'enpassant' in move.flags:
             for piece in game.pieces:
                 if game.board.turn == 'w':
                     if piece.pos == (move.end[0], move.end[1] + 1):
                         game.pieces.remove(piece)
+                        if game.premove and piece.pos == game.premove[0]:
+                            game.premove = None
                 else:
                     if piece.pos == (move.end[0], move.end[1] - 1):
                         game.pieces.remove(piece)
+                        if game.premove and piece.pos == game.premove[0]:
+                            game.premove = None
         if 'queenside castle' in move.flags:
             for piece in game.pieces:
                 if piece.pos == (move.end[0] - 2, move.end[1]):
@@ -126,7 +132,7 @@ class GraphicalPiece:
         else:
             if move.promotion_type:
                 self.pos = move.end
-                self.load_image_from_piece_string(game.board_rect, self.piece_string[0] + move.promotion_type)
+                self.load_image_from_piece_string(game, self.piece_string[0] + move.promotion_type)
                 self.selected = False
                 self.moves = []
                 for clock in game.clocks:
@@ -154,22 +160,35 @@ class GraphicalPiece:
                 piece.gen_moves(game.board)
 
     def update(self, game):
-        square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
+        real_square_hovering = (int((pygame.mouse.get_pos()[0] - game.board_rect.left) // (game.board_rect.width / 8)),
                            int((pygame.mouse.get_pos()[1] - game.board_rect.top) // (game.board_rect.height / 8)))
-        square_hovering = (7 - square_hovering[0], 7 - square_hovering[1]) if game.player_colour == 'b' else square_hovering
+        square_hovering = (7 - real_square_hovering[0], 7 - real_square_hovering[1]) if game.player_colour == 'b' else real_square_hovering
+
+        self.rect = self.prev_rect.copy()  # Original position
+
+        if game.board.turn == self.piece_string[0] and self.piece_string[0] == game.player_colour:
+            if game.premove:
+                if game.premove[0] == self.pos:
+                    move = self.get_move(game.premove[1])
+                    if move:
+                        self.make_move(move, game)
+                    game.premove = None
 
         if App.left_click:
             if self.rect.collidepoint(pygame.mouse.get_pos()):
-                if game.player_colour == self.piece_string[0]:
-                    if game.board.turn == self.piece_string[0]:
-                        self.gen_moves(game.board)
+                if self.piece_string[0] == game.player_colour:
                     self.selected = True
                     self.dragging = True
             else:
                 if self.selected:
-                    move = self.get_move(square_hovering)
-                    if move:  # Is a move
-                        self.make_move(move, game)
+                    if game.board.turn == self.piece_string[0]:
+                        move = self.get_move(square_hovering)
+                        if move:  # Is a move
+                            self.make_move(move, game)
+                    elif self.piece_string[0] == game.player_colour:
+                        if 0 <= real_square_hovering[0] <= 7 and 0 <= real_square_hovering[1] <= 7:
+                            if real_square_hovering != self.pos:
+                                game.premove = (self.pos, real_square_hovering)
                     self.selected = False
 
         if pygame.mouse.get_pressed()[0]:
@@ -177,12 +196,16 @@ class GraphicalPiece:
                 self.rect.center = pygame.mouse.get_pos()
         else:
             if self.dragging:
-                move = self.get_move(square_hovering)
-                if move:  # Is a move
-                    self.make_move(move, game)
-                else:
-                    self.rect = self.prev_rect.copy()
+                if game.board.turn == self.piece_string[0]:
+                    move = self.get_move(square_hovering)
+                    if move:  # Is a move
+                        self.make_move(move, game)
+                elif self.piece_string[0] == game.player_colour:
+                    if 0 <= real_square_hovering[0] <= 7 and 0 <= real_square_hovering[1] <= 7:
+                        if real_square_hovering != self.pos:
+                            game.premove = (self.pos, real_square_hovering)
 
+                self.selected = False
                 self.dragging = False
 
     def draw(self, game):

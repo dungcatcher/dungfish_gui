@@ -33,7 +33,7 @@ class Clock:
         self.paused = True
         self.timeout = False
 
-        self.time_remaining = 10
+        self.time_remaining = self.starting_time
 
     def press(self):
         self.paused = True

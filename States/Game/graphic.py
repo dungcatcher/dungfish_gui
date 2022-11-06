@@ -187,8 +187,8 @@ class GraphicalPiece:
                             self.make_move(move, game)
                     elif self.piece_string[0] == game.player_colour:
                         if 0 <= real_square_hovering[0] <= 7 and 0 <= real_square_hovering[1] <= 7:
-                            if real_square_hovering != self.pos:
-                                game.premove = (self.pos, real_square_hovering)
+                            if square_hovering != self.pos:
+                                game.premove = (self.pos, square_hovering)
                     self.selected = False
 
         if pygame.mouse.get_pressed()[0]:
@@ -203,7 +203,7 @@ class GraphicalPiece:
                 elif self.piece_string[0] == game.player_colour:
                     if 0 <= real_square_hovering[0] <= 7 and 0 <= real_square_hovering[1] <= 7:
                         if real_square_hovering != self.pos:
-                            game.premove = (self.pos, real_square_hovering)
+                            game.premove = (self.pos, square_hovering)
 
                 self.selected = False
                 self.dragging = False

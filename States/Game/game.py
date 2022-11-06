@@ -60,6 +60,9 @@ class Game(State):
 
         self.show_end_screen = False
         self.game_over_time = None
+        self.game_over_time_set = False
+
+        self.game_over_buttons = []
 
         self.clocks = [Clock(self, 'w'), Clock(self, 'b')]
 
@@ -68,6 +71,10 @@ class Game(State):
 
         if self.board.turn != self.player_colour:
             self.send_position_to_engine()
+
+    def go_home(self):
+        self.reset()
+        self.change_state('menu')
 
     def send_position_to_engine(self):
         if self.board.turn != self.player_colour and self.board.state == 'playing':
@@ -89,6 +96,22 @@ class Game(State):
         ]
         return buttons
 
+    def gen_game_over_buttons(self):
+        game_over_buttons = [
+            Button(
+                App.window, self.end_screen_rect.left + 0.1 * self.end_screen_rect.width,
+                self.end_screen_rect.top + 0.25 * self.end_screen_rect.height, 0.8 * self.end_screen_rect.width,
+                0.06 * App.window.get_height(), text='RESTART', onClick=lambda: self.reset()
+            ),
+            Button(
+                App.window, self.end_screen_rect.left + 0.1 * self.end_screen_rect.width,
+                self.end_screen_rect.top + 0.4 * self.end_screen_rect.height, 0.8 * self.end_screen_rect.width,
+                0.06 * App.window.get_height(), text='RETURN HOME', onClick=lambda: self.go_home()
+            )
+        ]
+
+        return game_over_buttons
+
     def reset(self):
         self.board = Board()
         self.pieces = []
@@ -102,6 +125,15 @@ class Game(State):
 
         for clock in self.clocks:
             clock.reset()
+
+        self.show_end_screen = False
+        self.game_over_time = None
+        self.game_over_time_set = False
+
+        self.game_over_buttons = []
+
+        if self.board.turn != self.player_colour:
+            self.send_position_to_engine()
 
     def resize(self):
         self.board_segment_rect = pygame.Rect(0, 0, 0.7 * App.window.get_width(), App.window.get_height())
@@ -127,13 +159,17 @@ class Game(State):
             clock.resize(self)
 
         self.buttons = self.gen_buttons()
+        if self.game_over_buttons:
+            self.game_over_buttons = self.gen_game_over_buttons()
 
     def update(self):
         if self.board.state != 'playing':
-            self.game_over_time = time.time()
+            if not self.game_over_time_set:
+                self.game_over_time = time.time()
+                self.game_over_time_set = True
 
         if self.game_over_time:
-            if time.time() - self.game_over_time >= 1:  # Wait one second
+            if time.time() - self.game_over_time >= 0.25:  # Wait 1/4 seconds
                 self.show_end_screen = True
 
         if turn_to_word[self.board.turn] != options['player_colour']:
@@ -150,9 +186,10 @@ class Game(State):
                                     target_move = move
                                     piece.make_move(target_move, self)
 
-        if not self.in_promotion and self.board.state == 'playing':
-            for piece in self.pieces:
-                piece.update(self)
+        if not self.in_promotion:
+            if self.board.state == 'playing':
+                for piece in self.pieces:
+                    piece.update(self)
         else:
             for promotion_piece in self.promotion_pieces:
                 if promotion_piece.piece_string[0] == self.board.turn:
@@ -205,6 +242,9 @@ class Game(State):
                     promotion_piece.draw()
 
         if self.show_end_screen:
+            if not self.game_over_buttons:
+                self.game_over_buttons = self.gen_game_over_buttons()
+
             transparent_surf = pygame.Surface(self.board_rect.size, pygame.SRCALPHA, 32)
             transparent_surf.fill((0, 0, 0, 64))
             App.window.blit(transparent_surf, self.board_rect)
@@ -221,6 +261,9 @@ class Game(State):
             text_surf, text_rect = self.end_screen_font.render(f'You {result} by {self.board.state}!', (255, 255, 255))
             text_rect.center = self.end_screen_rect.centerx, self.end_screen_rect.top + 0.15 * self.end_screen_rect.height
             App.window.blit(text_surf, text_rect)
+
+            for game_over_button in self.game_over_buttons:
+                game_over_button.draw()
 
         for clock in self.clocks:
             clock.draw(self)
